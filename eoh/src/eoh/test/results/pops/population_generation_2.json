@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins with just enough space for the item are prioritized to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty\n    \n    return scores",
+          "objective": 0.03984,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1), 0)\n    \n    # Reward bins with minimal remaining capacity\n    reward = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty + reward\n    \n    return scores",
+          "objective": 0.04045,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, and a dynamic penalty that increases exponentially with the remaining capacity, while also incorporating a reward for bins that are nearly full to encourage efficient packing.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Dynamic penalty that increases exponentially with remaining capacity\n    penalty = np.exp(remaining_capacity / item) - 1\n    \n    # Reward bins that are nearly full (within 10% of the item size)\n    reward = np.where((remaining_capacity > 0) & (remaining_capacity <= 0.1 * item), 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Combine the factors to compute the score\n    scores = reward - penalty\n    \n    return scores",
+          "objective": 0.04296,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, a penalty for bins with large remaining capacities, and a reward for bins with minimal remaining capacity, ensuring that bins with just enough space for the item are prioritized while also considering the overall utilization of bins to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Reward bins with minimal remaining capacity\n    reward = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty + reward\n    \n    return scores",
+          "objective": 0.04306,
+          "other_inf": null
+     }
+]

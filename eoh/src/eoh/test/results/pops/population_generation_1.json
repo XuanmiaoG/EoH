@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins with just enough space for the item are prioritized to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty\n    \n    return scores",
+          "objective": 0.03984,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, a penalty for bins with large remaining capacities, and a reward for bins with minimal remaining capacity, ensuring that bins with just enough space for the item are prioritized while also considering the overall utilization of bins to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Reward bins with minimal remaining capacity\n    reward = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty + reward\n    \n    return scores",
+          "objective": 0.04306,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates scores by combining a logarithmic transformation of the bin's remaining capacity, a penalty for bins with remaining capacity close to their maximum capacity, and a term that encourages using bins with remaining capacity close to the item size.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the logarithmic transformation of the remaining capacity\n    log_capacity = np.log1p(bins - item)\n    \n    # Calculate the penalty for bins with remaining capacity close to their maximum capacity\n    max_capacity = bins.max()\n    penalty = np.where(bins == max_capacity, -np.inf, np.exp(-(bins - item) / (max_capacity - bins + 1e-10)))\n    \n    # Calculate the term that encourages using bins with remaining capacity close to the item size\n    proximity_term = 1 / (1 + np.abs(bins - item - 1))\n    \n    # Combine the terms to calculate the scores\n    scores = log_capacity * penalty * proximity_term\n    \n    return scores",
+          "objective": 0.04779,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm assigns scores to bins based on a combination of the bin's remaining capacity, the item size, a dynamic penalty that increases with the number of bins already used, a reward for bins that are closer to being fully utilized, and a penalty for bins that are too large for the item.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the dynamic penalty based on the number of bins already used\n    num_used_bins = np.sum(bins != bins.max())\n    penalty = -np.inf if num_used_bins == 0 else -num_used_bins * 0.2\n    \n    # Calculate the reward for bins that are closer to being fully utilized\n    utilization_reward = (bins.max() - bins) / bins.max()\n    \n    # Calculate the penalty for bins that are too large for the item\n    size_penalty = np.where(bins > item * 2, -0.5, 0)\n    \n    # Calculate the score based on the remaining capacity, item size, dynamic penalty, utilization reward, and size penalty\n    scores = (bins - item) / bins + np.where(bins == bins.max(), penalty, 0) + utilization_reward + size_penalty\n    \n    return scores",
+          "objective": 0.098,
+          "other_inf": null
+     }
+]
