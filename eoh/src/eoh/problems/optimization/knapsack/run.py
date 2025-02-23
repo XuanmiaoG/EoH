@@ -12,7 +12,7 @@ class KNAPSACK():
         # Load a default instance set (e.g., instances with 100 items)
         getdata = GetData()
         # We assume get_instances accepts a string (e.g., "100") indicating the instance size/type.
-        self.instances, self.lb = getdata.get_instances("100")
+        self.instances, self.lb = getdata.get_instances("50")
         self.prompts = GetPrompts()
 
     def greedy_knapsack(self, items, capacity, score_func):

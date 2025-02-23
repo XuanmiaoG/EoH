@@ -1,8 +1,14 @@
 [
      {
-          "algorithm": "The algorithm calculates a score for an item by combining its value-to-weight ratio with a penalty term that discourages selecting items that would leave too much remaining capacity unused, ensuring a balance between maximizing value and efficiently utilizing the knapsack's capacity.",
-          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    value_to_weight = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalize unused capacity\n    score = value_to_weight + penalty\n    return score",
-          "objective": 0.00235,
+          "algorithm": "The algorithm calculates a score for an item by combining its value-to-weight ratio with a penalty term that discourages selecting items that would leave little remaining capacity, using a weighted sum of these factors.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    value_to_weight = value / weight\n    capacity_penalty = np.exp(-(remaining_capacity - weight) / remaining_capacity)\n    score = value_to_weight * capacity_penalty\n    return score",
+          "objective": -0.01658,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for an item by combining its value-to-weight ratio with a penalty factor based on how much the item's weight reduces the remaining capacity, ensuring a balance between value density and capacity utilization.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    value_density = value / weight\n    capacity_penalty = (remaining_capacity - weight) / remaining_capacity\n    score = value_density * capacity_penalty\n    return score",
+          "objective": -0.00452,
           "other_inf": null
      }
 ]
