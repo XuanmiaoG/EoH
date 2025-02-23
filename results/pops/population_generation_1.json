@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The new algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, a penalty for bins with large remaining capacities, and a reward for bins with remaining capacities close to the item size, aiming to minimize the number of used bins while optimizing load distribution.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities to avoid fragmentation\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Reward bins with remaining capacities close to the item size\n    reward = np.exp(-np.abs(remaining_capacity - item) / (item + 1e-9))\n    \n    # Encourage bins with smaller remaining capacities to balance the load\n    load_balance = 1 / (bins + 1e-9)\n    \n    # Combine the factors with weights to compute the final score\n    scores = 0.5 * penalty + 0.3 * reward + 0.2 * load_balance\n    \n    # Set the score to -infinity for bins that cannot fit the item\n    scores[bins < item] = -np.inf\n    \n    return scores",
+          "objective": 0.02646,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm assigns scores to bins by combining a weighted sum of the remaining capacity, the inverse of the remaining capacity, and a penalty term for bins with remaining capacity equal to their maximum capacity, ensuring bins are used efficiently to minimize the total number of bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    max_capacity = np.max(bins)  # Assume max capacity is the largest bin size\n    remaining_capacity = bins - item\n    inverse_capacity = 1 / (remaining_capacity + 1e-10)  # Avoid division by zero\n    penalty = np.where(bins == max_capacity, -np.inf, 0)  # Penalize bins with max capacity\n    scores = 0.5 * remaining_capacity + 0.3 * inverse_capacity + penalty\n    return scores",
+          "objective": 0.03874,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins with just enough space for the item are prioritized to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the penalty and priority to compute the final score\n    scores = penalty + priority\n    \n    return scores",
+          "objective": 0.03984,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, aiming to minimize the number of used bins while balancing the load.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities to avoid fragmentation\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Encourage bins with smaller remaining capacities to balance the load\n    load_balance = 1 / (bins + 1e-9)\n    \n    # Combine the factors with weights to compute the final score\n    scores = 0.7 * penalty + 0.3 * load_balance\n    \n    # Set the score to -infinity for bins that cannot fit the item\n    scores[bins < item] = -np.inf\n    \n    return scores",
+          "objective": 0.0499,
+          "other_inf": null
+     }
+]
