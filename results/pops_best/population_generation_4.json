@@ -1,6 +1,0 @@
-{
-     "algorithm": "```",
-     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Calculate the ratio of item size to remaining capacity\n    ratio = np.where(remaining_capacity > 0, item / (remaining_capacity + 1e-9), 0)\n    \n    # Calculate a penalty based on the exponential decay of remaining capacity\n    penalty = np.exp(-remaining_capacity / item)\n    \n    # Calculate a priority based on the closeness of the remaining capacity to the item size\n    priority = np.exp(-np.abs(remaining_capacity - item) / item)\n    \n    # Combine the penalty and priority with a dynamic weight based on the ratio\n    scores = (1 - ratio) * penalty + ratio * priority\n    \n    return scores",
-     "objective": 0.01288,
-     "other_inf": null
-}

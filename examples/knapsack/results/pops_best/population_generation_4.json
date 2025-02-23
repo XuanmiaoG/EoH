@@ -1,0 +1,6 @@
+{
+     "algorithm": "The new algorithm calculates the score by combining the item's value-to-weight ratio with an exponential decay factor based on the remaining capacity, prioritizing items that are valuable and have a weight that is a significant fraction of the remaining capacity.",
+     "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    score = (value / weight) * np.exp(-remaining_capacity / (weight + 1))\n    return score",
+     "objective": -0.47048,
+     "other_inf": null
+}

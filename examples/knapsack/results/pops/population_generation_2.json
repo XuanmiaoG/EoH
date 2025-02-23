@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The new algorithm calculates a score by combining the item's value with a logarithmic scaling factor based on the ratio of the item's weight to the remaining capacity, emphasizing items that provide high value while consuming a smaller proportion of the remaining capacity.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    scaling_factor = 1 / (1 + np.log(1 + ratio))\n    score = value * scaling_factor\n    return score",
+          "objective": -0.13188,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates a score by combining the item's value with a hyperbolic tangent function based on the ratio of the item's weight to the remaining capacity, emphasizing items that provide high value while balancing the proportion of the remaining capacity used.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    scaling_factor = np.tanh(1 / (1 + ratio))\n    score = value * scaling_factor\n    return score",
+          "objective": -0.12962,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for an item by combining its value with an exponential decay factor based on the item's weight relative to the remaining capacity, prioritizing items that maximize value while minimizing the impact on remaining capacity.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    decay_factor = np.exp(-weight / remaining_capacity)\n    score = value * decay_factor\n    return score",
+          "objective": -0.11605,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates a score by combining the item's value with a Gaussian decay factor based on the square of the ratio of the item's weight to the remaining capacity, prioritizing items that provide high value while minimizing the impact on remaining capacity in a non-linear fashion.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    scaling_factor = np.exp(-ratio**2)\n    score = value * scaling_factor\n    return score",
+          "objective": -0.11454,
+          "other_inf": null
+     }
+]

@@ -1,4 +1,4 @@
-operators = [### Test Only ###
+### Test Only ###
 # Set system path
 import sys
 import os

@@ -1,6 +1,0 @@
-{
-     "algorithm": "The new algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, a penalty for bins with large remaining capacities, and a reward for bins with remaining capacities close to the item size, aiming to minimize the number of used bins while optimizing load distribution.",
-     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities to avoid fragmentation\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Reward bins with remaining capacities close to the item size\n    reward = np.exp(-np.abs(remaining_capacity - item) / (item + 1e-9))\n    \n    # Encourage bins with smaller remaining capacities to balance the load\n    load_balance = 1 / (bins + 1e-9)\n    \n    # Combine the factors with weights to compute the final score\n    scores = 0.5 * penalty + 0.3 * reward + 0.2 * load_balance\n    \n    # Set the score to -infinity for bins that cannot fit the item\n    scores[bins < item] = -np.inf\n    \n    return scores",
-     "objective": 0.02646,
-     "other_inf": null
-}
