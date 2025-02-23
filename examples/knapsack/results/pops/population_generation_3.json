@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The algorithm calculates a score for an item by combining its value with an exponential decay factor based on the remaining capacity, prioritizing items that maximize value while minimizing the risk of leaving significant unused capacity.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value * decay_factor\n    return score",
+          "objective": -0.49214,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates a score for an item by combining its value with a logarithmic scaling factor based on the remaining capacity, prioritizing items that maximize value while considering the proportion of the remaining capacity they occupy.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    capacity_ratio = weight / remaining_capacity\n    scaling_factor = np.log(1 + capacity_ratio)\n    score = value * scaling_factor\n    return score",
+          "objective": -0.33891,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates a score for an item by combining its value with a square root scaling factor based on the proportion of the remaining capacity it occupies, prioritizing items that maximize value while balancing the utilization of the remaining capacity.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    capacity_ratio = weight / remaining_capacity\n    scaling_factor = np.sqrt(capacity_ratio)\n    score = value * scaling_factor\n    return score",
+          "objective": -0.23951,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm calculates a score for an item by combining its value with an exponential scaling factor based on the remaining capacity, prioritizing items that maximize value while considering the proportion of the remaining capacity they occupy.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    capacity_ratio = weight / remaining_capacity\n    scaling_factor = np.exp(capacity_ratio)\n    score = value * scaling_factor\n    return score",
+          "objective": -0.13812,
+          "other_inf": null
+     }
+]

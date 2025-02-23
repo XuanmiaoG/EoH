@@ -1,1 +1,8 @@
-[]
+[
+     {
+          "algorithm": "The algorithm calculates a score for an item by combining its value-to-weight ratio with a penalty term that discourages selecting items that would leave too much remaining capacity unused, ensuring a balance between maximizing value and efficiently utilizing the knapsack's capacity.",
+          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    value_to_weight = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalize unused capacity\n    score = value_to_weight + penalty\n    return score",
+          "objective": 0.00235,
+          "other_inf": null
+     }
+]
