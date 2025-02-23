@@ -6,7 +6,7 @@ paras = Paras()
 
 # Set parameters #
 paras.set_paras(method = "eoh",    # ['ael','eoh']
-                problem = "tsp_construct", #['tsp_construct','bp_online']
+                problem = "knapsack", #['tsp_construct','bp_online']
                 llm_api_endpoint = "api.deepseek.com", # set your LLM endpoint
                 llm_api_key = "sk-35e4e0944b4b495e9bfb670d7198d83b",   # set your key
                 llm_model = "deepseek-chat",

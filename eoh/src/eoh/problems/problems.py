@@ -16,6 +16,10 @@ class Probs():
             from .optimization.bp_online import run
             self.prob = run.BPONLINE()
             print("- Prob "+paras.problem+" loaded ")
+        elif paras.problem == "knapsack":
+            from .optimization.knapsack import run
+            self.prob = run.KNAPSACK()
+            print("- Prob "+paras.problem+" loaded ")            
         else:
             print("problem "+paras.problem+" not found!")
 

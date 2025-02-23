@@ -1,6 +1,6 @@
 {
-     "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins with just enough space for the item are prioritized to minimize the number of used bins.",
-     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the factors to compute the score\n    scores = priority + penalty\n    \n    return scores",
-     "objective": 0.03984,
+     "algorithm": "```",
+     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the normalized remaining capacity\n    normalized_capacity = bins / np.max(bins)\n    \n    # Calculate the penalty for bins with remaining capacity close to the item size\n    penalty = 1 / (1 + np.abs(bins - item))\n    \n    # Calculate the score as a combination of normalized capacity, penalty, and a logarithmic term\n    scores = normalized_capacity * penalty * np.log1p(bins)\n    \n    return scores",
+     "objective": 0.03974,
      "other_inf": null
 }

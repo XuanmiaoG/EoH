@@ -1,0 +1,6 @@
+{
+     "algorithm": "```",
+     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the normalized remaining capacity after placing the item\n    remaining_capacity = bins - item\n    normalized_capacity = remaining_capacity / bins\n    \n    # Calculate a dynamic penalty based on the bin's remaining capacity and item size\n    penalty = np.where(remaining_capacity > 0, np.exp(-remaining_capacity / item), -np.inf)\n    \n    # Calculate a weight based on the inverse of the bin's remaining capacity\n    weight = 1 / (remaining_capacity + 1e-9)\n    \n    # Calculate the score as a combination of normalized capacity, penalty, and weight\n    scores = normalized_capacity * penalty * weight\n    \n    return scores",
+     "objective": 0.03984,
+     "other_inf": null
+}

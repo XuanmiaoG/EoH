@@ -1,0 +1,6 @@
+{
+     "algorithm": "The new algorithm calculates scores for bins by combining a logarithmic penalty for remaining capacity, a dynamic weight based on the inverse of remaining capacity, and a quadratic normalization factor, ensuring bins with smaller remaining capacities are prioritized while avoiding over-penalizing nearly full bins.",
+     "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the normalized remaining capacity after placing the item\n    remaining_capacity = bins - item\n    normalized_capacity = (remaining_capacity / bins) ** 2\n    \n    # Calculate a logarithmic penalty based on the bin's remaining capacity\n    penalty = np.where(remaining_capacity > 0, np.log1p(remaining_capacity), -np.inf)\n    \n    # Calculate a dynamic weight based on the inverse of the bin's remaining capacity\n    weight = 1 / (remaining_capacity + 1e-10)\n    \n    # Calculate the score as a combination of normalized capacity, penalty, and weight\n    scores = normalized_capacity * penalty * weight\n    \n    return scores",
+     "objective": 0.01992,
+     "other_inf": null
+}
