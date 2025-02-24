@@ -116,6 +116,84 @@ Then, based on your analysis, simplify the components to enhance the generalizat
 Finally, provide the revised code, keeping the function name, inputs, and outputs unchanged. \n"+indiv1['code']+"\n"\
 +self.prompt_inout_inf+"\n"+"Do not give additional explanations."
         return prompt_content
+    
+
+    def get_prompt_h1(self, indivs):
+        prompt_indiv = ""
+        for i in range(len(indivs)):
+            prompt_indiv = prompt_indiv + "No." + str(i+1) + " algorithm and the corresponding code are: \n" + indivs[i]['algorithm'] + "\n" + indivs[i]['code'] + "\n"
+
+        prompt_content = self.prompt_task + "\n" \
+            "I have " + str(len(indivs)) + " existing algorithms with their codes as follows: \n" \
+            + prompt_indiv + \
+            "Please create a new hybrid algorithm by:\n" \
+            "1. Identifying the unique strengths of each algorithm\n" \
+            "2. Combining their complementary features\n" \
+            "3. Adding novel elements to improve the combination\n\n" \
+            "First, describe your hybrid algorithm and its integration approach in one sentence. " \
+            "The description must be inside a brace. Next, implement it in Python as a function named " \
+            + self.prompt_func_name + ". This function should accept " + str(len(self.prompt_func_inputs)) + " input(s): " \
+            + self.joined_inputs + ". The function should return " + str(len(self.prompt_func_outputs)) + " output(s): " \
+            + self.joined_outputs + ". " + self.prompt_inout_inf + " " \
+            + self.prompt_other_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
+
+    def get_prompt_f1(self, indiv1, failure_cases):
+        prompt_content = self.prompt_task + "\n" \
+            "I have one algorithm with its code as follows. " \
+            "Algorithm description: " + indiv1['algorithm'] + "\n" \
+            "Code:\n" \
+            + indiv1['code'] + "\n" \
+            "Failure cases:\n" + failure_cases + "\n\n" \
+            "Please create an improved algorithm by:\n" \
+            "1. Analyzing the patterns in failure cases\n" \
+            "2. Identifying the root causes of poor performance\n" \
+            "3. Designing specific mechanisms to address these weaknesses\n\n" \
+            "First, describe your improved algorithm in one sentence. " \
+            "The description must be inside a brace. Next, implement it in Python as a function named " \
+            + self.prompt_func_name + ". This function should accept " + str(len(self.prompt_func_inputs)) + " input(s): " \
+            + self.joined_inputs + ". The function should return " + str(len(self.prompt_func_outputs)) + " output(s): " \
+            + self.joined_outputs + ". " + self.prompt_inout_inf + " " \
+            + self.prompt_other_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
+
+    def get_prompt_c1(self, indiv1, constraints):
+        prompt_content = self.prompt_task + "\n" \
+            "I have one algorithm with its code as follows. " \
+            "Algorithm description: " + indiv1['algorithm'] + "\n" \
+            "Code:\n" \
+            + indiv1['code'] + "\n" \
+            "Critical constraints to address:\n" + constraints + "\n\n" \
+            "Please create a constraint-optimized algorithm by:\n" \
+            "1. Analyzing how the current algorithm handles these constraints\n" \
+            "2. Designing specialized mechanisms for constraint satisfaction\n" \
+            "3. Balancing constraint handling with overall performance\n\n" \
+            "First, describe your constraint-focused algorithm in one sentence. " \
+            "The description must be inside a brace. Next, implement it in Python as a function named " \
+            + self.prompt_func_name + ". This function should accept " + str(len(self.prompt_func_inputs)) + " input(s): " \
+            + self.joined_inputs + ". The function should return " + str(len(self.prompt_func_outputs)) + " output(s): " \
+            + self.joined_outputs + ". " + self.prompt_inout_inf + " " \
+            + self.prompt_other_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
+
+    def get_prompt_p1(self, indiv1, complexity_target):
+        prompt_content = self.prompt_task + "\n" \
+            "I have one algorithm with its code as follows. " \
+            "Algorithm description: " + indiv1['algorithm'] + "\n" \
+            "Code:\n" \
+            + indiv1['code'] + "\n" \
+            "Target complexity aspects:\n" + complexity_target + "\n\n" \
+            "Please create an enhanced algorithm by:\n" \
+            "1. Starting with the core mechanism of the base algorithm\n" \
+            "2. Adding complexity layers that address: " + complexity_target + "\n" \
+            "3. Maintaining interpretability and efficiency\n\n" \
+            "First, describe your progressively enhanced algorithm in one sentence. " \
+            "The description must be inside a brace. Next, implement it in Python as a function named " \
+            + self.prompt_func_name + ". This function should accept " + str(len(self.prompt_func_inputs)) + " input(s): " \
+            + self.joined_inputs + ". The function should return " + str(len(self.prompt_func_outputs)) + " output(s): " \
+            + self.joined_outputs + ". " + self.prompt_inout_inf + " " \
+            + self.prompt_other_inf + "\n" + "Do not give additional explanations."
+        return prompt_content
 
 
     def _get_alg(self,prompt_content):
@@ -280,4 +358,76 @@ Finally, provide the revised code, keeping the function name, inputs, and output
             print(">>> Press 'Enter' to continue")
             input()
 
+        return [code_all, algorithm]
+    
+    def h1(self, parents):
+        prompt_content = self.get_prompt_h1(parents)
+        
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ h1 ] : \n", prompt_content)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        [code_all, algorithm] = self._get_alg(prompt_content)
+        
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        return [code_all, algorithm]
+
+    def f1(self, parent, failure_cases):
+        prompt_content = self.get_prompt_f1(parent, failure_cases)
+        
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ f1 ] : \n", prompt_content)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        [code_all, algorithm] = self._get_alg(prompt_content)
+        
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        return [code_all, algorithm]
+
+    def c1(self, parent, constraints):
+        prompt_content = self.get_prompt_c1(parent, constraints)
+        
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ c1 ] : \n", prompt_content)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        [code_all, algorithm] = self._get_alg(prompt_content)
+        
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        return [code_all, algorithm]
+
+    def p1(self, parent, complexity_target):
+        prompt_content = self.get_prompt_p1(parent, complexity_target)
+        
+        if self.debug_mode:
+            print("\n >>> check prompt for creating algorithm using [ p1 ] : \n", prompt_content)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
+        [code_all, algorithm] = self._get_alg(prompt_content)
+        
+        if self.debug_mode:
+            print("\n >>> check designed algorithm: \n", algorithm)
+            print("\n >>> check designed code: \n", code_all)
+            print(">>> Press 'Enter' to continue")
+            input()
+            
         return [code_all, algorithm]

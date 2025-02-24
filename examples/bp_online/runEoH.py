@@ -6,6 +6,7 @@ paras = Paras()
 
 # Set parameters #
 paras.set_paras(method = "eoh",    # ['ael','eoh']
+                ec_operators  = ['e1','h1','m1','m2','m3'], 
                 problem = "bp_online", #['tsp_construct','bp_online']
                 llm_api_endpoint = "api.deepseek.com", # set your LLM endpoint
                 llm_api_key = "sk-35e4e0944b4b495e9bfb670d7198d83b",   # set your key

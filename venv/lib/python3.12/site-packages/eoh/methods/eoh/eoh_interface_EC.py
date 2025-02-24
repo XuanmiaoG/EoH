@@ -100,33 +100,59 @@ class InterfaceEC():
         return population
     
 
-    def _get_alg(self,pop,operator):
+    def _get_alg(self, pop, operator):
         offspring = {
             'algorithm': None,
             'code': None,
             'objective': None,
             'other_inf': None
         }
+        
         if operator == "i1":
             parents = None
-            [offspring['code'],offspring['algorithm']] =  self.evol.i1()            
+            [offspring['code'], offspring['algorithm']] = self.evol.i1()
+            
         elif operator == "e1":
-            parents = self.select.parent_selection(pop,self.m)
-            [offspring['code'],offspring['algorithm']] = self.evol.e1(parents)
+            parents = self.select.parent_selection(pop, self.m)
+            [offspring['code'], offspring['algorithm']] = self.evol.e1(parents)
+            
         elif operator == "e2":
-            parents = self.select.parent_selection(pop,self.m)
-            [offspring['code'],offspring['algorithm']] = self.evol.e2(parents) 
+            parents = self.select.parent_selection(pop, self.m)
+            [offspring['code'], offspring['algorithm']] = self.evol.e2(parents)
+            
         elif operator == "m1":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m1(parents[0])   
+            parents = self.select.parent_selection(pop, 1)
+            [offspring['code'], offspring['algorithm']] = self.evol.m1(parents[0])
+            
         elif operator == "m2":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m2(parents[0]) 
+            parents = self.select.parent_selection(pop, 1)
+            [offspring['code'], offspring['algorithm']] = self.evol.m2(parents[0])
+            
         elif operator == "m3":
-            parents = self.select.parent_selection(pop,1)
-            [offspring['code'],offspring['algorithm']] = self.evol.m3(parents[0]) 
+            parents = self.select.parent_selection(pop, 1)
+            [offspring['code'], offspring['algorithm']] = self.evol.m3(parents[0])
+            
+        elif operator == "h1":
+            parents = self.select.parent_selection(pop, self.m)
+            [offspring['code'], offspring['algorithm']] = self.evol.h1(parents)
+            
+        elif operator == "f1":
+            parents = self.select.parent_selection(pop, 1)
+            failure_cases = self.get_failure_cases(parents[0])
+            [offspring['code'], offspring['algorithm']] = self.evol.f1(parents[0], failure_cases)
+            
+        elif operator == "c1":
+            parents = self.select.parent_selection(pop, 1)
+            constraints = self.get_constraints()
+            [offspring['code'], offspring['algorithm']] = self.evol.c1(parents[0], constraints)
+            
+        elif operator == "p1":
+            parents = self.select.parent_selection(pop, 1)
+            complexity_target = self.get_complexity_target()
+            [offspring['code'], offspring['algorithm']] = self.evol.p1(parents[0], complexity_target)
+            
         else:
-            print(f"Evolution operator [{operator}] has not been implemented ! \n") 
+            print(f"Evolution operator [{operator}] has not been implemented!\n")
 
         return parents, offspring
 

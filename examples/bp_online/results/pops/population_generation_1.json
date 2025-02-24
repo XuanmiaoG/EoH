@@ -1,26 +1,26 @@
 [
      {
-          "algorithm": "The new algorithm assigns a score to each bin based on a combination of the bin's remaining capacity, the item size, a penalty for bins with remaining capacity equal to their maximum capacity, and a dynamic weight that prioritizes bins with the least remaining capacity after item placement, aiming to minimize the number of used bins while ensuring efficient packing.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the penalty for bins with remaining capacity equal to their maximum capacity\n    max_capacity = bins.max()\n    penalty = np.where(bins == max_capacity, -np.inf, 0)\n    \n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Calculate a dynamic weight based on the remaining capacity\n    weight = 1 / (remaining_capacity + 1e-9)  # Add a small epsilon to avoid division by zero\n    \n    # Calculate the score based on the remaining capacity, item size, penalty, and dynamic weight\n    scores = (remaining_capacity / bins) * weight + penalty\n    \n    return scores",
-          "objective": 0.04779,
+          "algorithm": "The algorithm assigns a score to each bin based on a combination of the logarithm of the remaining capacity, the exponential of the inverse of the remaining capacity, and a penalty for bins with maximum capacity, aiming to balance the utilization of bins and minimize the total number of bins used.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with maximum capacity (they should not be used)\n    max_capacity_penalty = np.where(bins == bins.max(), -np.inf, 0)\n    \n    # Calculate the score as a combination of logarithm and exponential functions\n    scores = np.log(remaining_capacity + 1) + np.exp(1 / (remaining_capacity + 1e-9)) + max_capacity_penalty\n    \n    return scores",
+          "objective": 0.03693,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm assigns scores to bins based on a combination of the bin's remaining capacity, the item size, and a dynamic penalty that increases with the bin's remaining capacity, while also considering the inverse of the bin's capacity to prioritize bins with just enough space for the item.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the difference between bin capacities and the item size\n    diff = bins - item\n    # Calculate a dynamic penalty that increases with the bin's remaining capacity\n    penalty = np.where(diff > 0, diff / bins, np.inf)\n    # Calculate scores as a combination of the inverse of the bin's capacity and the penalty\n    scores = (1 / bins) * np.exp(-penalty)\n    return scores",
-          "objective": 0.05071,
+          "algorithm": "The hybrid algorithm combines the weighted combination of remaining capacity and its inverse from Algorithm 1 with the logarithmic and exponential transformations from Algorithm 2, while introducing a novel dynamic weighting factor based on the current utilization of bins to further optimize bin usage and minimize the total number of bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with maximum capacity (they should not be used)\n    max_capacity_penalty = np.where(bins == bins.max(), -np.inf, 0)\n    \n    # Dynamic weighting factor based on current utilization\n    utilization = 1 - (remaining_capacity / bins)\n    dynamic_weight = np.exp(-utilization)\n    \n    # Calculate the score as a hybrid combination of weighted capacity, inverse, logarithm, and exponential\n    scores = (\n        dynamic_weight * 0.5 * remaining_capacity +\n        dynamic_weight * 0.5 * (1 / (remaining_capacity + 1e-9)) +\n        np.log(remaining_capacity + 1) +\n        np.exp(1 / (remaining_capacity + 1e-9)) +\n        max_capacity_penalty\n    )\n    \n    return scores",
+          "objective": 0.03843,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm assigns scores to bins based on a weighted combination of the bin's remaining capacity, the item size, a penalty for bins with maximum remaining capacity, and an exponential decay factor that prioritizes bins with a remaining capacity just slightly larger than the item size.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the penalty for bins with remaining capacity equal to their maximum capacity\n    max_capacity = bins.max()\n    penalty = np.where(bins == max_capacity, -np.inf, 0)\n    \n    # Calculate the difference between the bin's remaining capacity and the item size\n    capacity_diff = bins - item\n    \n    # Apply an exponential decay factor to prioritize bins with capacity just slightly larger than the item size\n    decay_factor = np.exp(-np.abs(capacity_diff) / (0.1 * bins))\n    \n    # Calculate the score based on the decay factor, item size, and penalty\n    scores = decay_factor * (bins - item) / bins + penalty\n    \n    return scores",
-          "objective": 0.05403,
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the remaining capacity, the inverse of the remaining capacity, and a penalty for bins with maximum capacity, ensuring bins are used efficiently to minimize the total number of bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with maximum capacity (they should not be used)\n    max_capacity_penalty = np.where(bins == bins.max(), -np.inf, 0)\n    \n    # Calculate the score as a weighted combination of remaining capacity and its inverse\n    scores = 0.5 * remaining_capacity + 0.5 * (1 / (remaining_capacity + 1e-9)) + max_capacity_penalty\n    \n    return scores",
+          "objective": 0.03874,
           "other_inf": null
      },
      {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the penalty for bins with remaining capacity equal to their maximum capacity\n    max_capacity = bins.max()\n    penalty = np.where(bins == max_capacity, -np.inf, 0)\n    \n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Calculate a dynamic weight based on the remaining capacity and item size\n    weight = np.exp(-remaining_capacity / item)  # Exponential decay based on remaining capacity\n    \n    # Calculate the score based on the remaining capacity, item size, penalty, and dynamic weight\n    scores = (remaining_capacity / bins) * weight + penalty\n    \n    return scores",
-          "objective": 0.10001,
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with remaining capacity equal to their maximum capacity, aiming to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Define weights for the scoring function\n    weight_capacity = 0.6\n    weight_item = 0.3\n    weight_penalty = 0.1\n    \n    # Calculate the score for each bin\n    scores = weight_capacity * (1 - bins) + weight_item * (item / bins) - weight_penalty * (bins == 1)\n    \n    return scores",
+          "objective": 0.03984,
           "other_inf": null
      }
 ]
