@@ -1,26 +1,26 @@
 [
      {
-          "algorithm": "The new algorithm calculates a score by combining the item's value with a logarithmic scaling factor based on the ratio of the item's weight to the remaining capacity, emphasizing items that provide high value while consuming a smaller proportion of the remaining capacity.",
-          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    scaling_factor = 1 / (1 + np.log(1 + ratio))\n    score = value * scaling_factor\n    return score",
-          "objective": -0.13188,
+          "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value-to-weight ratio and its potential contribution to the remaining capacity, ensuring that items that fit well and provide high value are prioritized.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is a combination of value-to-weight ratio and the fraction of remaining capacity used\n    value_to_weight = value / weight\n    capacity_usage = weight / remaining_capacity\n    score = value_to_weight * (1 - capacity_usage)\n    return score",
+          "objective": -0.03045,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm calculates a score for an item by combining its value with an exponential decay factor based on the item's weight relative to the remaining capacity, prioritizing items that maximize value while minimizing the impact on remaining capacity.",
-          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    decay_factor = np.exp(-weight / remaining_capacity)\n    score = value * decay_factor\n    return score",
-          "objective": -0.11605,
+          "algorithm": "The algorithm scores each item based on the ratio of its value to the square of its weight, adjusted by the remaining capacity, ensuring that items with higher value and lower weight are prioritized.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # {The algorithm scores each item based on the ratio of its value to the square of its weight, adjusted by the remaining capacity, ensuring that items with higher value and lower weight are prioritized.}\n    score = (value / (weight ** 2)) * remaining_capacity\n    return score",
+          "objective": -0.02527,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm calculates a score by combining the item's value with a quadratic decay factor based on the item's weight relative to the remaining capacity, prioritizing items that maximize value while more aggressively penalizing larger weights.",
-          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    capacity_ratio = weight / remaining_capacity\n    score = value * (1 - capacity_ratio) ** 2  # Quadratic decay factor\n    return score",
-          "objective": -0.0844,
+          "algorithm": "The algorithm is a greedy approach that scores each item based on the exponential decay of its weight relative to the remaining capacity, combined with its value-to-weight ratio, ensuring that items with higher value density and lower weight relative to the remaining capacity are prioritized.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight = value / weight\n    weight_ratio = weight / remaining_capacity\n    score = value_to_weight * np.exp(-weight_ratio)\n    return score",
+          "objective": -0.02192,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm calculates a score for an item by combining its value-to-weight ratio with a reward term that encourages selecting items that leave a balanced remaining capacity, using a weighted product of these factors.",
-          "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    value_to_weight = value / weight\n    capacity_reward = np.exp(-((remaining_capacity - weight) / remaining_capacity)**2)\n    score = value_to_weight * capacity_reward\n    return score",
-          "objective": -0.02713,
+          "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value-to-weight ratio and a penalty for its weight relative to the remaining capacity, ensuring that items with higher value density and lower weight are prioritized.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    weight_penalty = weight / remaining_capacity\n    score = value_density - weight_penalty\n    return score",
+          "objective": -0.01949,
           "other_inf": null
      }
 ]

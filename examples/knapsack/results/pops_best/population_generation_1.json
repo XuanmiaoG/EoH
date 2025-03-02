@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates a score by combining the item's value with a logarithmic scaling factor based on the ratio of the item's weight to the remaining capacity, emphasizing items that provide high value while consuming a smaller proportion of the remaining capacity.",
-     "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    scaling_factor = 1 / (1 + np.log(1 + ratio))\n    score = value * scaling_factor\n    return score",
-     "objective": -0.13188,
+     "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value-to-weight ratio and its potential contribution to the remaining capacity, ensuring that items that fit well and provide high value are prioritized.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is a combination of value-to-weight ratio and the fraction of remaining capacity used\n    value_to_weight = value / weight\n    capacity_usage = weight / remaining_capacity\n    score = value_to_weight * (1 - capacity_usage)\n    return score",
+     "objective": -0.03045,
      "other_inf": null
 }

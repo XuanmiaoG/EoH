@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates the score by combining the item's value with a hyperbolic tangent function that scales based on the ratio of the item's weight to the remaining capacity, prioritizing items that balance high value and efficient use of capacity.",
-     "code": "import numpy as np\nfrom numba import jit\n\n@jit(nopython=True)\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -np.inf  # Item cannot fit, assign lowest possible score\n    ratio = weight / remaining_capacity\n    score = value * np.tanh(1 / (ratio + 1e-9))  # Avoid division by zero\n    return score",
-     "objective": -0.04466,
+     "algorithm": "The algorithm scores each item based on the ratio of its value to the exponential of its weight, adjusted by the remaining capacity, ensuring that items with higher value and lower weight are prioritized.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # {The algorithm scores each item based on the ratio of its value to the exponential of its weight, adjusted by the remaining capacity, ensuring that items with higher value and lower weight are prioritized.}\n    score = (value / np.exp(weight)) * remaining_capacity\n    return score",
+     "objective": -0.07916,
      "other_inf": null
 }
