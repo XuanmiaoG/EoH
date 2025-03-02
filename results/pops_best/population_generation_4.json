@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates the score by combining the value-to-weight ratio with an exponential decay factor based on the remaining capacity relative to the item's weight.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value_weight_ratio * decay_factor\n    return score",
-     "objective": -0.45473,
+     "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value and lower weight are prioritized while also considering the knapsack's remaining capacity.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = np.exp(-remaining_capacity / weight)\n    score = value_to_weight_ratio * penalty\n    return score",
+     "objective": -0.38318,
      "other_inf": null
 }

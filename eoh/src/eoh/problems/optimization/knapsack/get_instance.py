@@ -1,6 +1,32 @@
 import numpy as np
 
 
+def dp_knapsack_01(weights: list[int], values: list[int], capacity: int) -> int:
+    """
+    Compute the optimal (maximum) total value for the 0-1 Knapsack problem
+    via dynamic programming.
+
+    This uses a 1D DP array of size (capacity+1), running in O(n * capacity) time,
+    where n = len(weights).
+
+    :param weights: list of item weights
+    :param values: list of item values
+    :param capacity: total knapsack capacity
+    :return: the maximum total value achievable
+    """
+    n = len(weights)
+    dp = [0] * (capacity + 1)  # dp[c] = best possible value with capacity c
+
+    for i in range(n):
+        w = weights[i]
+        v = values[i]
+        # We iterate capacity in reverse to avoid overwriting data we still need
+        for c in range(capacity, w - 1, -1):
+            dp[c] = max(dp[c], dp[c - w] + v)
+
+    return dp[capacity]
+
+
 class GetData:
     def __init__(self) -> None:
         self.datasets = {}
@@ -25,8 +51,8 @@ class GetData:
                                 - "num_items": number of items (int)
                                 - "weights": list of item weights (list of int)
                                 - "values": list of item values (list of int)
-            baseline (dict): A dictionary mapping each instance name to a baseline total value
-                             computed by the greedy ratio approach (value/weight).
+            baseline (dict): A dictionary mapping each instance name to the
+                             **optimal** solution value (via DP).
         """
         size_int = int(size)
         instances = {}
@@ -56,19 +82,8 @@ class GetData:
             }
             instances[instance_name] = instance_data
 
-            # Compute baseline using the classic greedy ratio method (value/weight)
-            items = [{"weight": w, "value": v} for w, v in zip(weights, values_arr)]
-            items_sorted = sorted(
-                items, key=lambda x: x["value"] / x["weight"], reverse=True
-            )
-
-            remaining = cap
-            baseline_value = 0
-            for item in items_sorted:
-                if item["weight"] <= remaining:
-                    baseline_value += item["value"]
-                    remaining -= item["weight"]
-
-            baseline[instance_name] = baseline_value
+            # Compute the OPTIMAL baseline using DP for 0-1 Knapsack
+            optimal_value = dp_knapsack_01(weights, values_arr, cap)
+            baseline[instance_name] = optimal_value
 
         return instances, baseline

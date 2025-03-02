@@ -1,26 +1,26 @@
 [
      {
-          "algorithm": "The new algorithm calculates the score by combining the value-to-weight ratio with an exponential decay factor based on the remaining capacity relative to the item's weight.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value_weight_ratio * decay_factor\n    return score",
-          "objective": -0.45473,
-          "other_inf": null
-     },
-     {
-          "algorithm": "The new algorithm scores each item based on the ratio of its value to the exponential of its weight, adjusted by the remaining capacity, prioritizing items with higher value and lower weight while considering the available capacity.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    score = (value / np.exp(weight)) * remaining_capacity\n    return score",
-          "objective": -0.07284,
+          "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value and lower weight are prioritized while also considering the knapsack's remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = np.exp(-remaining_capacity / weight)\n    score = value_to_weight_ratio * penalty\n    return score",
+          "objective": -0.38318,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    capacity_weight_ratio = remaining_capacity / weight\n    score = value_weight_ratio * np.log(capacity_weight_ratio)\n    return score",
-          "objective": -0.02518,
+          "code": "import numpy as np\n\ndef exponential_decay(x, k=1):\n    return np.exp(-k * x)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = remaining_capacity / weight\n    score = value_density * exponential_decay(capacity_ratio, k=0.5)\n    return score",
+          "objective": -0.2294,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm scores each item based on the product of its value and the remaining capacity, normalized by the square of its weight, prioritizing items with higher value and lower weight relative to the remaining capacity.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    score = (value * remaining_capacity) / (weight ** 2)\n    return score",
-          "objective": -0.02024,
+          "algorithm": "The new algorithm scores items based on a combination of exponential decay of the item's weight relative to the remaining capacity and a hyperbolic tangent transformation of the value-to-weight ratio, prioritizing items with lower weight and higher value density.",
+          "code": "import numpy as np\n\ndef hyperbolic_tangent(x):\n    return np.tanh(x)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    weight_ratio = weight / remaining_capacity\n    score = hyperbolic_tangent(value_density) * np.exp(-weight_ratio * 5)  # Adjusted exponential decay\n    return score",
+          "objective": -0.07767,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm scores items based on a sigmoid-weighted value-to-weight ratio, where the sigmoid function is applied to the ratio of the item's weight to the remaining capacity, ensuring that items with higher value density and lower relative weight are prioritized.",
+          "code": "import numpy as np\n\ndef sigmoid(x):\n    return 1 / (1 + np.exp(-x))\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    weight_ratio = weight / remaining_capacity\n    score = value_density * sigmoid(-weight_ratio * 10)  # Adjusted sigmoid scaling\n    return score",
+          "objective": -0.04921,
           "other_inf": null
      }
 ]

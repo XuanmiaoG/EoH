@@ -138,15 +138,17 @@ class KNAPSACK:
 
         :return: fitness (float) if the candidate code succeeds; None if any error occurs.
         """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # Create a new, empty module to hold the candidate's code
-            heuristic_module = types.ModuleType("heuristic_module")
-            exec(code_string, heuristic_module.__dict__)
-            sys.modules[heuristic_module.__name__] = heuristic_module
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                # Create a new, empty module to hold the candidate's code
+                heuristic_module = types.ModuleType("heuristic_module")
+                exec(code_string, heuristic_module.__dict__)
+                sys.modules[heuristic_module.__name__] = heuristic_module
 
-            # Evaluate the module's score function via greedy_knapsack
-            fitness = self.evaluateGreedy(heuristic_module)
-            return fitness
+                # Evaluate the module's score function via greedy_knapsack
+                fitness = self.evaluateGreedy(heuristic_module)
+                return fitness
 
-
+        except Exception as e:
+            return None
