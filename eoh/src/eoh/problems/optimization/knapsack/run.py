@@ -126,7 +126,7 @@ class KNAPSACK:
         if avg_value == 0:
             print("Warning: Candidate returned zero total value on all instances.")
         baseline_avg = np.mean([self.lb[name] for name in self.instances.keys()])
-        fitness = (avg_value - baseline_avg) / baseline_avg
+        fitness = (baseline_avg - avg_value) / baseline_avg
         return fitness
 
     def evaluate(self, code_string):
