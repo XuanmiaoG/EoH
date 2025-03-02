@@ -1,0 +1,26 @@
+[
+     {
+          "algorithm": "The new algorithm calculates the score by combining the value-to-weight ratio with an exponential decay factor based on the remaining capacity relative to the item's weight.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value_weight_ratio * decay_factor\n    return score",
+          "objective": -0.45473,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm scores each item based on the ratio of its value to the exponential of its weight, adjusted by the remaining capacity, prioritizing items with higher value and lower weight while considering the available capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    score = (value / np.exp(weight)) * remaining_capacity\n    return score",
+          "objective": -0.07284,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    capacity_weight_ratio = remaining_capacity / weight\n    score = value_weight_ratio * np.log(capacity_weight_ratio)\n    return score",
+          "objective": -0.02518,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm scores each item based on the product of its value and the remaining capacity, normalized by the square of its weight, prioritizing items with higher value and lower weight relative to the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    score = (value * remaining_capacity) / (weight ** 2)\n    return score",
+          "objective": -0.02024,
+          "other_inf": null
+     }
+]

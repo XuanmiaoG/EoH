@@ -1,0 +1,6 @@
+{
+     "algorithm": "```",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    capacity_weight_ratio = remaining_capacity / weight\n    score = value_weight_ratio * np.log(capacity_weight_ratio)\n    return score",
+     "objective": -0.02518,
+     "other_inf": null
+}

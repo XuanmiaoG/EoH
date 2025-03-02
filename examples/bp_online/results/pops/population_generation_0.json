@@ -1,25 +1,25 @@
 [
      {
-          "algorithm": "The algorithm assigns scores to bins by combining a weighted sum of the remaining capacity, the inverse of the remaining capacity, and a penalty term for bins with remaining capacity equal to their maximum capacity, ensuring bins are used efficiently to minimize the total number of bins used.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    max_capacity = np.max(bins)  # Assume max capacity is the largest bin size\n    remaining_capacity = bins - item\n    inverse_capacity = 1 / (remaining_capacity + 1e-10)  # Avoid division by zero\n    penalty = np.where(bins == max_capacity, -np.inf, 0)  # Penalize bins with max capacity\n    scores = remaining_capacity + inverse_capacity + penalty\n    return scores",
-          "objective": 0.03874,
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins are filled efficiently to minimize the total number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities to encourage filling\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1e-9), 0)\n    \n    # Calculate the score as a weighted combination of remaining capacity and penalty\n    scores = (1 / (remaining_capacity + 1e-9)) * penalty\n    \n    # Set the score to 0 for bins that cannot fit the item\n    scores[bins < item] = 0\n    \n    return scores",
+          "objective": 0.05071,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with large remaining capacities, ensuring that bins with just enough space for the item are prioritized to minimize the number of used bins.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Penalize bins with large remaining capacities\n    penalty = np.where(remaining_capacity > 0, 1 / (remaining_capacity + 1), 0)\n    \n    # Prioritize bins with just enough space for the item\n    priority = np.where(remaining_capacity == 0, 1, 0)\n    \n    # Combine the penalty and priority to compute the final score\n    scores = penalty + priority\n    \n    return scores",
-          "objective": 0.03984,
+          "algorithm": "The algorithm assigns scores to bins by considering the ratio of the remaining capacity to the item size, the inverse of the remaining capacity, and a penalty for bins with maximum capacity, ensuring efficient bin usage and minimizing the total number of bins used.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the ratio of remaining capacity to item size\n    ratio = bins / item\n    # Calculate the inverse of the remaining capacity\n    inv_capacity = 1 / bins\n    # Penalize bins with maximum capacity (remaining capacity equals maximum capacity)\n    penalty = np.where(bins == bins.max(), 0, 1)\n    # Combine the factors to compute the score\n    scores = ratio * inv_capacity * penalty\n    return scores",
+          "objective": 0.05675,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm assigns an item to the bin with the highest score, where the score is calculated as a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with larger remaining capacities, aiming to minimize the number of used bins.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the score for each bin\n    scores = (bins - item) / bins  # Favor bins with remaining capacity close to the item size\n    scores[bins == bins.max()] = -np.inf  # Penalize bins with maximum capacity (unused bins)\n    return scores",
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with remaining capacity equal to their maximum capacity, aiming to minimize the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity ratio\n    capacity_ratio = bins / item\n    \n    # Penalize bins with remaining capacity equal to their maximum capacity\n    penalty = np.where(bins == bins.max(), 0, 1)\n    \n    # Combine the capacity ratio and penalty into a score\n    scores = capacity_ratio * penalty\n    \n    return scores",
           "objective": 0.13211,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm assigns scores to bins by combining a weighted sum of the bin's remaining capacity, the item size, and a penalty term that discourages using bins with large remaining capacity, ensuring efficient bin usage and minimizing the total number of bins used.",
-          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the penalty term to discourage using bins with large remaining capacity\n    penalty = np.exp(-(bins - item) / item)\n    \n    # Calculate the score as a weighted sum of remaining capacity, item size, and penalty\n    scores = (bins - item) / bins + 0.5 * (item / bins) - 0.3 * penalty\n    \n    return scores",
+          "algorithm": "The algorithm assigns an item to a bin by scoring each feasible bin based on a weighted combination of the bin's remaining capacity, the item size, and the inverse of the bin's capacity, ensuring that bins with less remaining capacity are prioritized to minimize fragmentation and the number of used bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Calculate the remaining capacity after placing the item\n    remaining_capacity = bins - item\n    \n    # Calculate the inverse of the bin's capacity (to prioritize bins with less remaining capacity)\n    inverse_capacity = 1 / bins\n    \n    # Calculate the score as a weighted combination of remaining capacity and inverse capacity\n    scores = remaining_capacity * 0.6 + inverse_capacity * 0.4\n    \n    # If the remaining capacity equals the maximum capacity, set the score to -infinity to avoid using it\n    scores[bins == item] = -np.inf\n    \n    return scores",
           "objective": 1.51534,
           "other_inf": null
      }

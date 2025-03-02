@@ -1,0 +1,6 @@
+{
+     "algorithm": "The new algorithm calculates the score by combining the value-to-weight ratio with an exponential decay factor based on the remaining capacity relative to the item's weight.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_weight_ratio = value / weight\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value_weight_ratio * decay_factor\n    return score",
+     "objective": -0.45473,
+     "other_inf": null
+}
