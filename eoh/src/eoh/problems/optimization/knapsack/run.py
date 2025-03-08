@@ -149,4 +149,5 @@ class KNAPSACK:
                 return fitness
 
         except Exception as e:
+            print("Error:", str(e))
             return None

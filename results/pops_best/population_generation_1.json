@@ -1,6 +1,0 @@
-{
-     "algorithm": "```",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is based on the hyperbolic tangent of the value-to-weight ratio, scaled by the remaining capacity\n    value_to_weight = value / weight\n    score = np.tanh(value_to_weight) * remaining_capacity\n    return score",
-     "objective": 0.00257,
-     "other_inf": null
-}
