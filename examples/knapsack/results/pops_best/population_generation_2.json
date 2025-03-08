@@ -1,6 +1,0 @@
-{
-     "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value, weight, and the remaining capacity, prioritizing items that maximize the value while considering the exponential decay of the remaining capacity relative to the item's weight.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    decay_factor = np.exp(-remaining_capacity / weight)\n    score = value * decay_factor\n    return score",
-     "objective": -0.40033,
-     "other_inf": null
-}

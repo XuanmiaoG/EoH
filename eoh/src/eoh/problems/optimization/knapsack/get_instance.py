@@ -1,80 +1,118 @@
+from typing import List, Dict, Tuple
 import numpy as np
 
 
-def dp_knapsack_01(weights: list[int], values: list[int], capacity: int) -> int:
+def dp_knapsack_01(weights: List[int], values: List[int], capacity: int) -> int:
     """
     Compute the optimal (maximum) total value for the 0-1 Knapsack problem
-    via dynamic programming.
+    via dynamic programming, using a 1D DP array.
 
-    This uses a 1D DP array of size (capacity+1), running in O(n * capacity) time,
-    where n = len(weights).
+    Let:
+      - n = number of items
+      - W = capacity of the knapsack
+      - w_i = weight of item i
+      - v_i = value of item i
+
+    We define the DP array as:
+        dp[c] = maximum possible value achievable using capacity c
+
+    Transition Formula (iterating in reverse order for capacity):
+        dp[c] = max( dp[c], dp[c - w_i] + v_i ),  if c >= w_i
+
+    The time complexity is O(n * W).
 
     :param weights: list of item weights
     :param values: list of item values
     :param capacity: total knapsack capacity
     :return: the maximum total value achievable
     """
-    n = len(weights)
-    dp = [0] * (capacity + 1)  # dp[c] = best possible value with capacity c
+    n: int = len(weights)
+    dp: List[int] = [0] * (capacity + 1)
 
     for i in range(n):
-        w = weights[i]
-        v = values[i]
-        # We iterate capacity in reverse to avoid overwriting data we still need
-        for c in range(capacity, w - 1, -1):
-            dp[c] = max(dp[c], dp[c - w] + v)
+        w_i: int = weights[i]
+        v_i: int = values[i]
+        # Iterate capacity in reverse to avoid using updated dp values prematurely
+        for c in range(capacity, w_i - 1, -1):
+            dp[c] = max(dp[c], dp[c - w_i] + v_i)
 
     return dp[capacity]
 
 
 class GetData:
+    """
+    A class for generating random 0-1 Knapsack instances and computing
+    their optimal solutions using the dp_knapsack_01 function.
+    """
+
     def __init__(self) -> None:
-        self.datasets = {}
+        """
+        Constructor initializing an empty datasets dictionary.
+        """
+        self.datasets: Dict[str, Dict[str, int | List[int]]] = {}
 
     def get_instances(
-        self, size: str = "50", capacity: int = None
-    ) -> tuple[dict, dict]:
+        self,
+        size: str = "500",
+        capacity: int | None = None,
+        count: int = 50,
+    ) -> Tuple[Dict[str, Dict[str, int | List[int]]], Dict[str, int]]:
         """
-        Generate a set of 0-1 Knapsack instances with a given number of items.
+        Generate multiple 0-1 Knapsack instances with a given number of items,
+        and compute the **optimal** solution values for each instance.
 
-        :param size: A string representing the number of items (e.g., '50', '100', '200', '500').
-        :param capacity: (Optional) If provided, this integer will be used as a fixed knapsack capacity
-                         for all instances. If None, the capacity is set to 50% of sum of the item weights.
+        Each instance includes:
+            - capacity   (int)        : the knapsack capacity
+            - num_items  (int)        : number of items in the instance
+            - weights    (List[int])  : list of item weights
+            - values     (List[int])  : list of item values
 
-        We generate random weights in [1,50] and values in [10,100].
+        :param size:
+            A string representing the number of items (e.g., '50', '100', '200', '500').
+        :param capacity:
+            (Optional) If provided, this integer will be used as the fixed knapsack capacity
+            for all instances. If None, the capacity is set to floor(0.5 * sum_of_weights).
+        :param count:
+            Number of instances to generate for the given size. Default is 5.
+
+        We generate random weights in [1, 100] and values in [10, 200].
         If capacity is None, the capacity is set to floor(0.5 * sum_of_weights).
 
-        Returns:
-            instances (dict): A dictionary of generated instances.
-                              Each key is an instance name, and each value is another dict with:
-                                - "capacity": the knapsack capacity (int)
-                                - "num_items": number of items (int)
-                                - "weights": list of item weights (list of int)
-                                - "values": list of item values (list of int)
-            baseline (dict): A dictionary mapping each instance name to the
-                             **optimal** solution value (via DP).
+        :return:
+            (instances, baseline) as a 2-tuple:
+              - instances (Dict[str, Dict[str, int | List[int]]]):
+                  A dictionary of generated instances.
+                  Each key is an instance name, each value is a dictionary containing:
+                    {
+                      "capacity": int,
+                      "num_items": int,
+                      "weights": List[int],
+                      "values": List[int]
+                    }
+              - baseline (Dict[str, int]):
+                  A dictionary mapping each instance name to the optimal solution value.
         """
-        size_int = int(size)
-        instances = {}
-        baseline = {}
+        size_int: int = int(size)
+        instances: Dict[str, Dict[str, int | List[int]]] = {}
+        baseline: Dict[str, int] = {}
 
-        # Generate 3 instances for each 'size' for demonstration/testing
-        for i in range(1, 4):
-            instance_name = f"test_{i}"
+        for i in range(1, count + 1):
+            instance_name: str = f"test_{i}"
 
-            # Randomly generate weights and values
-            weights = np.random.randint(1, 51, size_int).tolist()  # [1..50]
-            values_arr = np.random.randint(10, 101, size_int).tolist()  # [10..100]
+            # Generate random weights in [1..100] and values in [10..200]
+            weights: List[int] = np.random.randint(1, 101, size_int).tolist()
+            values_arr: List[int] = np.random.randint(10, 201, size_int).tolist()
 
-            # If user doesn't provide a capacity, use 50% of total weight
+            # Compute capacity
             if capacity is None:
-                cap = int(0.5 * sum(weights))
+                # Use 50% of the total weight
+                cap: int = int(0.5 * sum(weights))
             else:
-                # Otherwise, use the provided capacity (must be > 0)
+                # Use the provided capacity if > 0, else 1
                 cap = max(1, capacity)
 
             # Build the instance data
-            instance_data = {
+            instance_data: Dict[str, int | List[int]] = {
                 "capacity": cap,
                 "num_items": size_int,
                 "weights": weights,
@@ -82,8 +120,8 @@ class GetData:
             }
             instances[instance_name] = instance_data
 
-            # Compute the OPTIMAL baseline using DP for 0-1 Knapsack
-            optimal_value = dp_knapsack_01(weights, values_arr, cap)
+            # Compute the optimal solution via DP
+            optimal_value: int = dp_knapsack_01(weights, values_arr, cap)
             baseline[instance_name] = optimal_value
 
         return instances, baseline

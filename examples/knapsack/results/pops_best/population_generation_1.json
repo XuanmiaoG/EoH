@@ -1,6 +1,0 @@
-{
-     "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value, weight, and the remaining capacity, prioritizing items that maximize the value while minimizing the wasted capacity in the knapsack.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    wasted_capacity = remaining_capacity - weight\n    score = value * (1 - wasted_capacity / remaining_capacity)\n    return score",
-     "objective": -0.33841,
-     "other_inf": null
-}

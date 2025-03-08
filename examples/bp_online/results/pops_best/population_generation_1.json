@@ -1,6 +1,0 @@
-{
-     "algorithm": "The algorithm assigns scores to bins by combining a weighted sum of the remaining capacity, the inverse of the remaining capacity, and a penalty term for bins with remaining capacity equal to their maximum capacity, ensuring bins are used efficiently to minimize the total number of bins used.",
-     "code": "import numpy as np\n\ndef score(item, bins):\n    max_capacity = np.max(bins)  # Assume max capacity is the largest bin size\n    remaining_capacity = bins - item\n    inverse_capacity = 1 / (remaining_capacity + 1e-10)  # Avoid division by zero\n    penalty = np.where(bins == max_capacity, -np.inf, 0)  # Penalize bins with max capacity\n    scores = remaining_capacity + inverse_capacity + penalty\n    return scores",
-     "objective": 0.03874,
-     "other_inf": null
-}

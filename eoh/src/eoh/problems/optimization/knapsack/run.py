@@ -1,9 +1,7 @@
 import numpy as np
-import importlib
 import types
 import warnings
 import sys
-import numba  # ensure numba is imported
 
 from .get_instance import GetData
 from .prompts import GetPrompts
