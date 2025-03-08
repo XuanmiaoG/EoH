@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm scores each item based on a combination of its value-to-weight ratio and an exponential term that accounts for the remaining capacity, prioritizing items with higher value-to-weight ratios and better utilization of the remaining capacity.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    exp_term = np.exp(-(remaining_capacity - weight) / remaining_capacity)\n    score = value_to_weight_ratio + exp_term\n    return score",
-     "objective": 0.00209,
+     "algorithm": "```",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is based on the hyperbolic tangent of the value-to-weight ratio, scaled by the remaining capacity\n    value_to_weight = value / weight\n    score = np.tanh(value_to_weight) * remaining_capacity\n    return score",
+     "objective": 0.00257,
      "other_inf": null
 }

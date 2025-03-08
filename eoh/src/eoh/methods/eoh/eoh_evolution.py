@@ -1,6 +1,6 @@
-import re
+import json
 import time
-from ...llm.interface_LLM import InterfaceLLM
+from ...llm.interface_LLM import InterfaceLLM  # Uncomment and update as needed
 
 
 class Evolution:
@@ -39,10 +39,7 @@ class Evolution:
             joined_inputs (str): Comma-separated string of input parameter names.
             joined_outputs (str): Comma-separated string of output parameter names.
             interface_llm (InterfaceLLM): The interface to the local or remote LLM.
-
         """
-
-        # Retrieve prompt info
         self.prompt_task: str = prompts.get_task()
         self.prompt_func_name: str = prompts.get_func_name()
         self.prompt_func_inputs: list[str] = prompts.get_func_inputs()
@@ -80,7 +77,7 @@ class Evolution:
         )
 
     ############################################################################
-    # Prompt Generators
+    # Prompt Generators (requesting JSON with keys "algorithm" and "code")
     ############################################################################
 
     def get_prompt_i1(self) -> str:
@@ -90,17 +87,30 @@ class Evolution:
         Returns:
             A string containing the prompt instructions for the LLM.
         """
+        # We explicitly request valid JSON with 'algorithm' and 'code'
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "First, describe your new algorithm and main steps in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "Please return your answer in **valid JSON** format with the following structure:\n"
+            + """
+{
+  "algorithm": "...", 
+  "code": "..."
+}
+"""
+            + "Important:\n"
+            + " - 'algorithm' must be a single-sentence description in curly braces\n"
+            + " - 'code' must be the entire Python code\n"
+            + " - No extra keys, no commentary outside the JSON.\n\n"
+            + "Now describing your new algorithm:\n"
+            + "1. Provide the single-sentence description in curly braces.\n"
+            + "2. Implement the function named "
             + self.prompt_func_name
-            + ". This function should accept "
+            + ", which accepts "
             + str(len(self.prompt_func_inputs))
             + " input(s): "
             + self.joined_inputs
-            + ". The function should return "
+            + ", returning "
             + str(len(self.prompt_func_outputs))
             + " output(s): "
             + self.joined_outputs
@@ -109,25 +119,19 @@ class Evolution:
             + " "
             + self.prompt_other_inf
             + "\n"
-            + "Do not give additional explanations."
+            + "No further explanation. Output must be **valid JSON** with keys 'algorithm' and 'code'."
         )
         return prompt_content
 
     def get_prompt_e1(self, indivs: list[dict[str, str]]) -> str:
         """
         Build the prompt content for operator 'e1'.
-        This uses a set of existing algorithms (indivs) to create something totally different.
-
-        Args:
-            indivs: List of dicts with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
+        Uses a set of existing algorithms (indivs) to create something totally different.
         """
         prompt_indiv = ""
         for i, indiv in enumerate(indivs):
             prompt_indiv += (
-                f"No.{i + 1} algorithm and the corresponding code are: \n"
+                f"No.{i + 1} algorithm + code:\n"
                 + indiv["algorithm"]
                 + "\n"
                 + indiv["code"]
@@ -137,46 +141,43 @@ class Evolution:
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have "
-            + str(len(indivs))
-            + " existing algorithms with their codes as follows: \n"
+            + "Here are some existing algorithms:\n"
             + prompt_indiv
-            + "Please help me create a new algorithm that has a totally different form from the given ones. \n"
-            "First, describe your new algorithm and main steps in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "Please create a NEW algorithm that is totally different.\n\n"
+            + "Return your answer in **valid JSON** format:\n"
+            + """
+{
+  "algorithm": "...", 
+  "code": "..."
+}
+"""
+            + "Implement a function named "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
+            + " inputs: "
             + self.joined_inputs
-            + ". The function should return "
+            + ", returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
+            + " outputs: "
             + self.joined_outputs
             + ". "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo further explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
     def get_prompt_e2(self, indivs: list[dict[str, str]]) -> str:
         """
         Build the prompt content for operator 'e2'.
-        Motivates a new algorithm based on the common backbone idea of existing ones.
-
-        Args:
-            indivs: List of dicts with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
+        Motivates a new algorithm based on the common backbone of existing ones.
         """
         prompt_indiv = ""
         for i, indiv in enumerate(indivs):
             prompt_indiv += (
-                f"No.{i + 1} algorithm and the corresponding code are: \n"
+                f"No.{i + 1} algorithm + code:\n"
                 + indiv["algorithm"]
                 + "\n"
                 + indiv["code"]
@@ -186,28 +187,31 @@ class Evolution:
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have "
-            + str(len(indivs))
-            + " existing algorithms with their codes as follows: \n"
+            + "We have these existing algorithms:\n"
             + prompt_indiv
-            + "Please help me create a new algorithm that has a totally different form from the given ones but can be motivated from them. \n"
-            "Firstly, identify the common backbone idea in the provided algorithms. Secondly, based on the backbone idea describe your new algorithm in one sentence. "
-            "The description must be inside a brace. Thirdly, implement it in Python as a function named "
+            + "Please create a NEW algorithm that is different yet motivated by them.\n\n"
+            + "Return your answer in **valid JSON** format:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement a function named "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
+            + " inputs: "
             + self.joined_inputs
-            + ". The function should return "
+            + ", returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
+            + " outputs: "
             + self.joined_outputs
             + ". "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
@@ -215,122 +219,104 @@ class Evolution:
         """
         Build the prompt content for operator 'm1'.
         Creates a new algorithm as a modified version of the given one.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
         """
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have one algorithm with its code as follows. Algorithm description: "
+            + "Current algorithm + code:\n"
             + indiv1["algorithm"]
-            + "\nCode:\n"
+            + "\n"
             + indiv1["code"]
-            + "\nPlease assist me in creating a new algorithm that has a different form "
-            "but can be a modified version of the algorithm provided. \n"
-            "First, describe your new algorithm and main steps in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "\n\n"
+            + "Please create a new algorithm in a different form but as a modification of the above.\n\n"
+            + "Return your answer in **valid JSON** format:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
+            + " inputs: "
             + self.joined_inputs
-            + ". The function should return "
+            + ", returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
+            + " outputs: "
             + self.joined_outputs
             + ". "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
+    # Similarly adapt get_prompt_m2, m3, h1, f1, c1, p1
+    # Each ensures LLM responds in JSON with "algorithm" & "code".
+
     def get_prompt_m2(self, indiv1: dict[str, str]) -> str:
-        """
-        Build the prompt content for operator 'm2'.
-        Creates a new algorithm that adjusts parameter settings of the given one.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have one algorithm with its code as follows. Algorithm description: "
+            + "Current algorithm + code:\n"
             + indiv1["algorithm"]
-            + "\nCode:\n"
+            + "\n"
             + indiv1["code"]
-            + "\nPlease identify the main algorithm parameters and assist me in creating a new algorithm "
-            "that has a different parameter settings of the score function provided. \n"
-            "First, describe your new algorithm and main steps in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "\n\n"
+            + "Identify the main parameters and create a new algorithm with different parameter settings.\n\n"
+            + "Return your answer in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
+            + " inputs: "
             + self.joined_inputs
-            + ". The function should return "
+            + ", returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
+            + " outputs: "
             + self.joined_outputs
             + ". "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
     def get_prompt_m3(self, indiv1: dict[str, str]) -> str:
-        """
-        Build the prompt content for operator 'm3'.
-        Simplifies components of the given code to enhance generalization.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_content = (
-            "First, you need to identify the main components in the function below. "
-            "Next, analyze whether any of these components can be overfit to the in-distribution instances. "
-            "Then, based on your analysis, simplify the components to enhance the generalization "
-            "to potential out-of-distribution instances. Finally, provide the revised code, "
-            "keeping the function name, inputs, and outputs unchanged. \n"
+            self.prompt_task
+            + "\n"
+            + "Below is the code to be simplified:\n"
             + indiv1["code"]
-            + "\n"
+            + "\n\n"
+            "Simplify it to avoid overfitting, keeping function name, inputs, outputs.\n\n"
+            "Return your answer in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
             + self.prompt_inout_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
     def get_prompt_h1(self, indivs: list[dict[str, str]]) -> str:
-        """
-        Build the prompt content for operator 'h1'.
-        Creates a new hybrid algorithm by integrating multiple algorithms.
-
-        Args:
-            indivs: List of dicts with 'algorithm' and 'code'.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_indiv = ""
         for i, indiv in enumerate(indivs):
             prompt_indiv += (
-                f"No.{i + 1} algorithm and the corresponding code are: \n"
+                f"No.{i + 1} algorithm + code:\n"
                 + indiv["algorithm"]
                 + "\n"
                 + indiv["code"]
@@ -340,252 +326,176 @@ class Evolution:
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have "
-            + str(len(indivs))
-            + " existing algorithms with their codes as follows: \n"
+            + "You have multiple algorithms:\n"
             + prompt_indiv
-            + "Please create a new hybrid algorithm by:\n"
-            "1. Identifying the unique strengths of each algorithm\n"
-            "2. Combining their complementary features\n"
-            "3. Adding novel elements to improve the combination\n\n"
-            "First, describe your hybrid algorithm and its integration approach in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "Please create a NEW hybrid algorithm by combining strengths.\n\n"
+            + "Return your answer in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
-            + self.joined_inputs
-            + ". The function should return "
+            + " inputs, returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
-            + self.joined_outputs
-            + ". "
+            + " outputs. "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON with 'algorithm' and 'code'."
         )
         return prompt_content
 
     def get_prompt_f1(self, indiv1: dict[str, str], failure_cases: str) -> str:
-        """
-        Build the prompt content for operator 'f1'.
-        Improves the algorithm by analyzing and addressing its failure cases.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-            failure_cases: A string describing known failure scenarios.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have one algorithm with its code as follows. Algorithm description: "
+            + "We have an algorithm:\n"
             + indiv1["algorithm"]
-            + "\nCode:\n"
+            + "\n"
             + indiv1["code"]
-            + "\nFailure cases:\n"
+            + "\n"
+            "Failure cases:\n"
             + failure_cases
             + "\n\n"
-            "Please create an improved algorithm by:\n"
-            "1. Analyzing the patterns in failure cases\n"
-            "2. Identifying the root causes of poor performance\n"
-            "3. Designing specific mechanisms to address these weaknesses\n\n"
-            "First, describe your improved algorithm in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "Improve the algorithm by addressing these failures.\n\n"
+            + "Return in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
-            + self.joined_inputs
-            + ". The function should return "
+            + " inputs, returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
-            + self.joined_outputs
-            + ". "
+            + " outputs. "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON."
         )
         return prompt_content
 
     def get_prompt_c1(self, indiv1: dict[str, str], constraints: str) -> str:
-        """
-        Build the prompt content for operator 'c1'.
-        Creates a constraint-focused algorithm by addressing specified constraints.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-            constraints: A string describing the critical constraints to handle.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have one algorithm with its code as follows. Algorithm description: "
+            + "We have code:\n"
             + indiv1["algorithm"]
-            + "\nCode:\n"
+            + "\n"
             + indiv1["code"]
-            + "\nCritical constraints to address:\n"
+            + "\nConstraints:\n"
             + constraints
             + "\n\n"
-            "Please create a constraint-optimized algorithm by:\n"
-            "1. Analyzing how the current algorithm handles these constraints\n"
-            "2. Designing specialized mechanisms for constraint satisfaction\n"
-            "3. Balancing constraint handling with overall performance\n\n"
-            "First, describe your constraint-focused algorithm in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            + "Optimize the algorithm to handle these constraints.\n\n"
+            + "Return in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
-            + self.joined_inputs
-            + ". The function should return "
+            + " inputs, returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
-            + self.joined_outputs
-            + ". "
+            + " outputs. "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON."
         )
         return prompt_content
 
     def get_prompt_p1(self, indiv1: dict[str, str], complexity_target: str) -> str:
-        """
-        Build the prompt content for operator 'p1'.
-        Increases complexity layers of the given algorithm.
-
-        Args:
-            indiv1: A dict with 'algorithm' and 'code'.
-            complexity_target: Description of how to add complexity.
-
-        Returns:
-            A string containing the prompt instructions for the LLM.
-        """
         prompt_content = (
             self.prompt_task
             + "\n"
-            + "I have one algorithm with its code as follows. Algorithm description: "
+            + "We have code:\n"
             + indiv1["algorithm"]
-            + "\nCode:\n"
+            + "\n"
             + indiv1["code"]
-            + "\nTarget complexity aspects:\n"
+            + "\nComplexity target:\n"
             + complexity_target
             + "\n\n"
-            "Please create an enhanced algorithm by:\n"
-            "1. Starting with the core mechanism of the base algorithm\n"
-            "2. Adding complexity layers that address: " + complexity_target + "\n"
-            "3. Maintaining interpretability and efficiency\n\n"
-            "First, describe your progressively enhanced algorithm in one sentence. "
-            "The description must be inside a brace. Next, implement it in Python as a function named "
+            "Add complexity layers while preserving interpretability.\n\n"
+            "Return in **valid JSON**:\n"
+            + """
+{
+  "algorithm": "...",
+  "code": "..."
+}
+"""
+            + "Implement function "
             + self.prompt_func_name
-            + ". This function should accept "
+            + " with "
             + str(len(self.prompt_func_inputs))
-            + " input(s): "
-            + self.joined_inputs
-            + ". The function should return "
+            + " inputs, returning "
             + str(len(self.prompt_func_outputs))
-            + " output(s): "
-            + self.joined_outputs
-            + ". "
+            + " outputs. "
             + self.prompt_inout_inf
             + " "
             + self.prompt_other_inf
-            + "\n"
-            + "Do not give additional explanations."
+            + "\nNo extra explanation. Must be valid JSON."
         )
         return prompt_content
 
     ############################################################################
-    # Core Response Handling
+    # Core Response Handling (JSON-based)
     ############################################################################
 
     def _get_alg(self, prompt_content: str) -> list[str]:
         """
-        Internal helper to query the LLM with 'prompt_content', parse the returned
-        'algorithm' description (within braces) and the 'code' snippet.
+        Internal helper to query the LLM, expecting valid JSON with keys:
+            "algorithm" and "code".
 
-        Returns a list [ code_all, algorithm ], where:
-            - code_all (str): The discovered code plus the returned variables.
-            - algorithm (str): The single-sentence description from braces.
+        Returns:
+            [code_all, algorithm]
 
         Example math formula (illustrative):
-            If R is the raw LLM response and M is the parsing method,
-            then:
-
-                output = M(R)
-
-            The complexity of the regex parsing is typically O(len(R)).
+            Let R be the raw string from the LLM, then
+              O = json.loads(R)
+            => time complexity ~ O(len(R)).
 
         Args:
             prompt_content: The prompt string to send to the LLM.
-
-        Returns:
-            A list of two strings: [code_all, algorithm].
         """
-        response: str = self.interface_llm.get_response(prompt_content)
+        max_retries = 3
+        n_retry = 1
+        algorithm = ""
+        code = ""
 
-        # Attempt to extract the algorithm description (anything within curly braces)
-        algorithm_matches = re.findall(r"\{(.*)\}", response, re.DOTALL)
-        if len(algorithm_matches) == 0:
-            # fallback checks
-            if "python" in response:
-                algorithm_matches = re.findall(r"^.*?(?=python)", response, re.DOTALL)
-            elif "import" in response:
-                algorithm_matches = re.findall(r"^.*?(?=import)", response, re.DOTALL)
-            else:
-                algorithm_matches = re.findall(r"^.*?(?=def)", response, re.DOTALL)
-
-        # Attempt to extract the code snippet
-        code_matches = re.findall(r"import.*return", response, re.DOTALL)
-        if len(code_matches) == 0:
-            code_matches = re.findall(r"def.*return", response, re.DOTALL)
-
-        n_retry: int = 1
-        while len(algorithm_matches) == 0 or len(code_matches) == 0:
-            if self.debug_mode:
-                print(
-                    "Error: algorithm or code not identified, wait 1s and retrying ... "
-                )
-            time.sleep(1)
-
+        while n_retry <= max_retries:
             response = self.interface_llm.get_response(prompt_content)
-            algorithm_matches = re.findall(r"\{(.*)\}", response, re.DOTALL)
-            if len(algorithm_matches) == 0:
-                if "python" in response:
-                    algorithm_matches = re.findall(
-                        r"^.*?(?=python)", response, re.DOTALL
-                    )
-                elif "import" in response:
-                    algorithm_matches = re.findall(
-                        r"^.*?(?=import)", response, re.DOTALL
-                    )
-                else:
-                    algorithm_matches = re.findall(r"^.*?(?=def)", response, re.DOTALL)
+            try:
+                data = json.loads(response)
+                if "algorithm" not in data or "code" not in data:
+                    raise ValueError("Missing 'algorithm' or 'code' in JSON.")
 
-            code_matches = re.findall(r"import.*return", response, re.DOTALL)
-            if len(code_matches) == 0:
-                code_matches = re.findall(r"def.*return", response, re.DOTALL)
-
-            if n_retry > 3:
+                algorithm = data["algorithm"]
+                code = data["code"]
                 break
+            except (json.JSONDecodeError, ValueError) as e:
+                if self.debug_mode:
+                    print(f"Attempt {n_retry} => invalid JSON or missing keys: {e}")
+                # Update the prompt to remind the LLM about the needed format
+                prompt_content = (
+                    "Your last output was not valid JSON with the required keys. "
+                    "Please return valid JSON with keys 'algorithm' and 'code' only."
+                )
             n_retry += 1
 
-        # Fallback to the first matched strings
-        algorithm: str = algorithm_matches[0] if algorithm_matches else ""
-        code: str = code_matches[0] if code_matches else ""
-
-        # Append function outputs to code snippet (the original logic merges them)
+        # Optionally, merge function outputs if you want
         code_all = code + " " + ", ".join(s for s in self.prompt_func_outputs)
         return [code_all, algorithm]
 
@@ -596,302 +506,182 @@ class Evolution:
     def i1(self) -> list[str]:
         """
         Operator 'i1': Generate an initial algorithm from scratch (no parents).
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Returns [code_all, algorithm].
         """
         prompt_content = self.get_prompt_i1()
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ i1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [i1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
 
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def e1(self, parents: list[dict[str, str]]) -> list[str]:
         """
-        Operator 'e1': Generate a new algorithm that is totally different
-        from the given parents' algorithms.
-
-        Args:
-            parents: A list of parent algorithm dicts.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Operator 'e1': Generate a new algorithm totally different from the given parents'.
         """
         prompt_content = self.get_prompt_e1(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ e1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [e1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def e2(self, parents: list[dict[str, str]]) -> list[str]:
         """
         Operator 'e2': Generate a new algorithm that is different yet
-        motivated by the common backbone idea of given parents.
-
-        Args:
-            parents: A list of parent algorithm dicts.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        motivated by the common backbone idea of the parents.
         """
         prompt_content = self.get_prompt_e2(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ e2 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [e2]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def m1(self, parents: dict[str, str]) -> list[str]:
         """
         Operator 'm1': Create a new algorithm as a modified version of 'parents'.
-
-        Args:
-            parents: A dictionary with 'algorithm' and 'code'.
-
-        Returns:
-            [code_all, algorithm], both strings.
         """
         prompt_content = self.get_prompt_m1(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ m1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [m1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def m2(self, parents: dict[str, str]) -> list[str]:
         """
-        Operator 'm2': Create a new algorithm by adjusting parameters
-        of the given parent algorithm.
-
-        Args:
-            parents: A dictionary with 'algorithm' and 'code'.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Operator 'm2': Adjust parameters of the parent's algorithm.
         """
         prompt_content = self.get_prompt_m2(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ m2 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [m2]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def m3(self, parents: dict[str, str]) -> list[str]:
         """
-        Operator 'm3': Simplify the components of the parent's code.
-
-        Args:
-            parents: A dictionary with 'algorithm' and 'code'.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Operator 'm3': Simplify the code to enhance generalization.
         """
         prompt_content = self.get_prompt_m3(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ m3 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [m3]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def h1(self, parents: list[dict[str, str]]) -> list[str]:
         """
         Operator 'h1': Create a new hybrid algorithm by combining multiple parents.
-
-        Args:
-            parents: A list of parent algorithm dicts.
-
-        Returns:
-            [code_all, algorithm], both strings.
         """
         prompt_content = self.get_prompt_h1(parents)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ h1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [h1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def f1(self, parent: dict[str, str], failure_cases: str) -> list[str]:
         """
         Operator 'f1': Improve the algorithm by analyzing known failure cases.
-
-        Args:
-            parent: A dictionary with 'algorithm' and 'code'.
-            failure_cases: A string describing the failure scenarios.
-
-        Returns:
-            [code_all, algorithm], both strings.
         """
         prompt_content = self.get_prompt_f1(parent, failure_cases)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ f1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [f1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def c1(self, parent: dict[str, str], constraints: str) -> list[str]:
         """
-        Operator 'c1': Create a constraint-optimized algorithm based on the parent's code.
-
-        Args:
-            parent: A dictionary with 'algorithm' and 'code'.
-            constraints: A string describing critical constraints to handle.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Operator 'c1': Create a constraint-optimized algorithm.
         """
         prompt_content = self.get_prompt_c1(parent, constraints)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ c1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [c1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]
 
     def p1(self, parent: dict[str, str], complexity_target: str) -> list[str]:
         """
-        Operator 'p1': Increase the complexity of the parent algorithm in a controlled manner.
-
-        Args:
-            parent: A dictionary with 'algorithm' and 'code'.
-            complexity_target: A string describing how to add complexity.
-
-        Returns:
-            [code_all, algorithm], both strings.
+        Operator 'p1': Increase complexity of the parent algorithm, given a target.
         """
         prompt_content = self.get_prompt_p1(parent, complexity_target)
 
         if self.debug_mode:
-            print(
-                "\n >>> check prompt for creating algorithm using [ p1 ] : \n",
-                prompt_content,
-            )
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> Prompt [p1]:\n", prompt_content)
+            input("Press Enter to continue...")
 
         code_all, algorithm = self._get_alg(prompt_content)
-
         if self.debug_mode:
-            print("\n >>> check designed algorithm: \n", algorithm)
-            print("\n >>> check designed code: \n", code_all)
-            print(">>> Press 'Enter' to continue")
-            input()
+            print("\n>>> 'algorithm':\n", algorithm)
+            print(">>> 'code':\n", code_all)
+            input("Press Enter to continue...")
 
         return [code_all, algorithm]

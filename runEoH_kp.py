@@ -1,9 +1,18 @@
 from eoh.src.eoh import eoh
 from eoh.src.eoh.utils.getParas import Paras
+import random
+import numpy as np
 
 # Parameter initilization #
 paras = Paras()
 
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
+
+set_seed(2025)
 # Set parameters #
 paras.set_paras(
     method="eoh",  # ['ael','eoh']
