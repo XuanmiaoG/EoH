@@ -13,7 +13,7 @@ def set_seed(seed):
 
 
 set_seed(2025)
-# Set parameters #
+
 paras.set_paras(
     method="eoh",  # ['ael','eoh']
     problem="knapsack",  # ['tsp_construct','bp_online']
