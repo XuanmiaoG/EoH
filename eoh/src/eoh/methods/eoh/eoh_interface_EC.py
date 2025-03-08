@@ -6,31 +6,73 @@ from joblib import Parallel, delayed
 from .evaluator_accelerate import add_numba_decorator
 import re
 import concurrent.futures
+import numpy as np
+import concurrent.futures
 
 
 class InterfaceEC:
     def __init__(
         self,
-        pop_size,
-        m,
-        api_endpoint,
-        api_key,
-        llm_model,
-        llm_use_local,
-        llm_local_url,
-        debug_mode,
-        interface_prob,
-        select,
-        n_p,
-        timeout,
-        use_numba,
-        **kwargs,
-    ):
+        pop_size: int,
+        m: int,
+        api_endpoint: str | None,
+        api_key: str | None,
+        llm_model: str | None,
+        llm_use_local: bool,
+        llm_local_url: str | None,
+        debug_mode: bool,
+        interface_prob: object,
+        select: object,
+        n_p: int,
+        timeout: float,
+        use_numba: bool,
+        **kwargs: object,
+    ) -> None:
+        """
+        Interface for an Evolutionary Computation (EC) workflow.
 
+        This class manages the generation and evaluation of offspring
+        algorithms using a large language model (LLM)-based approach.
+
+        Args:
+            pop_size: Number of offspring (algorithms) to produce in each generation.
+            m: Number of parents needed for certain evolutionary operators.
+            api_endpoint: (Optional) The remote API endpoint for the LLM.
+            api_key: (Optional) API key for remote LLM usage.
+            llm_model: (Optional) The model name/type for the LLM.
+            llm_use_local: If True, uses a local LLM server.
+            llm_local_url: (Optional) URL for the local LLM server.
+            debug_mode: If True, prints additional debug information.
+            interface_prob: An object encapsulating problem-specific interfaces (e.g., TSP, Knapsack).
+            select: An object defining how to select parents from the population.
+            n_p: Number of parallel workers/processes to use.
+            timeout: Time in seconds to wait for code evaluation before timeout.
+            use_numba: If True, attempts to add Numba decorators to generated code.
+            **kwargs: Any additional keyword arguments needed by the Evolution or the interface.
+
+        Example math formula (illustrative):
+            Let T be the total time (seconds) to evaluate one offspring code.
+            Then for pop_size = P and concurrency = n_p,
+            the approximate total evaluation time is:
+
+                T_total ≈ (P / n_p) * T
+
+            (neglecting overhead of scheduling/communication).
+        """
         # LLM settings
-        self.pop_size = pop_size
-        self.interface_eval = interface_prob
+        self.pop_size: int = pop_size
+        self.m: int = m
+        self.debug: bool = debug_mode
+        self.n_p: int = n_p
+        self.timeout: float = timeout
+        self.use_numba: bool = use_numba
+
+        self.interface_eval: object = (
+            interface_prob  # Could type as a specific evaluator class
+        )
         prompts = interface_prob.prompts
+
+        # Initialize the Evolution object (assuming imported from .eoh_evolution)
         self.evol = Evolution(
             api_endpoint,
             api_key,
@@ -41,25 +83,35 @@ class InterfaceEC:
             prompts,
             **kwargs,
         )
-        self.m = m
-        self.debug = debug_mode
 
         if not self.debug:
             warnings.filterwarnings("ignore")
 
-        self.select = select
-        self.n_p = n_p
+        self.select: object = select
 
-        self.timeout = timeout
-        self.use_numba = use_numba
+    def code2file(self, code: str) -> None:
+        """
+        Write a string of code to a local file named 'ael_alg.py'.
 
-    def code2file(self, code):
+        Args:
+            code: The code string to be written to the file.
+        """
         with open("./ael_alg.py", "w") as file:
-            # Write the code to the file
             file.write(code)
-        return
 
-    def add2pop(self, population, offspring):
+    def add2pop(
+        self, population: list[dict[str, object]], offspring: dict[str, object]
+    ) -> bool:
+        """
+        Add an offspring to the population, avoiding duplicates by 'objective'.
+
+        Args:
+            population: Current list of individuals in the population.
+            offspring: New individual to add.
+
+        Returns:
+            True if added successfully (no duplicate objectives), False otherwise.
+        """
         for ind in population:
             if ind["objective"] == offspring["objective"]:
                 if self.debug:
@@ -68,66 +120,91 @@ class InterfaceEC:
         population.append(offspring)
         return True
 
-    def check_duplicate(self, population, code):
+    def check_duplicate(self, population: list[dict[str, object]], code: str) -> bool:
+        """
+        Check if the given code is already in the population.
+
+        Args:
+            population: The current list of individuals in the population.
+            code: The code string to check.
+
+        Returns:
+            True if the code is found in the population, False otherwise.
+        """
         for ind in population:
             if code == ind["code"]:
                 return True
         return False
 
-    # def population_management(self,pop):
-    #     # Delete the worst individual
-    #     pop_new = heapq.nsmallest(self.pop_size, pop, key=lambda x: x['objective'])
-    #     return pop_new
+    def population_generation(self) -> list[dict[str, object]]:
+        """
+        Generate the initial population by using operator 'i1' to create individuals.
 
-    # def parent_selection(self,pop,m):
-    #     ranks = [i for i in range(len(pop))]
-    #     probs = [1 / (rank + 1 + len(pop)) for rank in ranks]
-    #     parents = random.choices(pop, weights=probs, k=m)
-    #     return parents
-
-    def population_generation(self):
-
+        Returns:
+            A list of newly generated individuals.
+        """
         n_create = 2
+        population: list[dict[str, object]] = []
 
-        population = []
-
-        for i in range(n_create):
+        for _ in range(n_create):
             _, pop = self.get_algorithm([], "i1")
             for p in pop:
                 population.append(p)
 
         return population
 
-    def population_generation_seed(self, seeds, n_p):
+    def population_generation_seed(
+        self, seeds: list[dict[str, object]], n_p: int
+    ) -> list[dict[str, object]]:
+        """
+        Initialize the population from a list of seed algorithms.
 
-        population = []
+        Args:
+            seeds: A list of seed algorithms, each containing 'code' and 'algorithm'.
+            n_p: Number of parallel processes to use for evaluation.
 
-        fitness = Parallel(n_jobs=n_p)(
+        Returns:
+            A list of individuals (with evaluated objectives).
+        """
+        population: list[dict[str, object]] = []
+
+        fitness_results = Parallel(n_jobs=n_p)(
             delayed(self.interface_eval.evaluate)(seed["code"]) for seed in seeds
         )
 
-        for i in range(len(seeds)):
+        for i, seed in enumerate(seeds):
             try:
-                seed_alg = {
-                    "algorithm": seeds[i]["algorithm"],
-                    "code": seeds[i]["code"],
+                seed_alg: dict[str, object] = {
+                    "algorithm": seed["algorithm"],
+                    "code": seed["code"],
                     "objective": None,
                     "other_inf": None,
                 }
-
-                obj = np.array(fitness[i])
+                obj = np.array(fitness_results[i])
                 seed_alg["objective"] = np.round(obj, 5)
                 population.append(seed_alg)
-
-            except Exception as e:
+            except Exception:
                 print("Error in seed algorithm")
                 exit()
 
         print("Initiliazation finished! Get " + str(len(seeds)) + " seed algorithms")
-
         return population
 
-    def _get_alg(self, pop, operator):
+    def _get_alg(
+        self, pop: list[dict[str, object]], operator: str
+    ) -> tuple[list[dict[str, object]] | None, dict[str, object]]:
+        """
+        Internal method to generate an offspring using a specified operator.
+
+        Args:
+            pop: Current population list.
+            operator: A string indicating which evolutionary operator to use.
+
+        Returns:
+            (parents, offspring_dict)
+            - parents: The parents used (or None if not applicable).
+            - offspring_dict: A dict with fields 'algorithm', 'code', 'objective', 'other_inf'.
+        """
         offspring = {
             "algorithm": None,
             "code": None,
@@ -135,8 +212,8 @@ class InterfaceEC:
             "other_inf": None,
         }
 
+        parents = None
         if operator == "i1":
-            parents = None
             [offspring["code"], offspring["algorithm"]] = self.evol.i1()
 
         elif operator == "e1":
@@ -189,63 +266,74 @@ class InterfaceEC:
 
         return parents, offspring
 
-    def get_offspring(self, pop, operator):
+    def get_offspring(
+        self, pop: list[dict[str, object]], operator: str
+    ) -> tuple[list[dict[str, object]] | None, dict[str, object]]:
+        """
+        Generate a single offspring using 'operator', then evaluate it.
 
+        - Avoids duplicates by checking existing population codes.
+        - Optionally inserts a Numba decorator if use_numba=True.
+        - Evaluates the newly generated code with a timeout.
+
+        Args:
+            pop: Current population list.
+            operator: Name of the operator (e.g., 'm1', 'e1').
+
+        Returns:
+            (parents, offspring) where
+            - parents: The parents selected for producing the offspring.
+            - offspring: A dict with 'algorithm', 'code', 'objective', 'other_inf'.
+                         If an error occurs, returns an empty structure.
+        """
         try:
             p, offspring = self._get_alg(pop, operator)
 
+            # Insert a Numba decorator if requested
             if self.use_numba:
-
-                # Regular expression pattern to match function definitions
                 pattern = r"def\s+(\w+)\s*\(.*\):"
-
-                # Search for function definitions in the code
                 match = re.search(pattern, offspring["code"])
-
-                function_name = match.group(1)
-
-                code = add_numba_decorator(
-                    program=offspring["code"], function_name=function_name
-                )
+                if match:
+                    function_name = match.group(1)
+                    code_modified = add_numba_decorator(
+                        offspring["code"], function_name
+                    )
+                else:
+                    code_modified = offspring["code"]
             else:
-                code = offspring["code"]
+                code_modified = offspring["code"]
 
             n_retry = 1
             while self.check_duplicate(pop, offspring["code"]):
-
                 n_retry += 1
                 if self.debug:
                     print("duplicated code, wait 1 second and retrying ... ")
-
+                # Retry generation
                 p, offspring = self._get_alg(pop, operator)
-
                 if self.use_numba:
-                    # Regular expression pattern to match function definitions
                     pattern = r"def\s+(\w+)\s*\(.*\):"
-
-                    # Search for function definitions in the code
                     match = re.search(pattern, offspring["code"])
-
-                    function_name = match.group(1)
-
-                    code = add_numba_decorator(
-                        program=offspring["code"], function_name=function_name
-                    )
-                else:
-                    code = offspring["code"]
+                    if match:
+                        function_name = match.group(1)
+                        code_modified = add_numba_decorator(
+                            offspring["code"], function_name
+                        )
+                    else:
+                        code_modified = offspring["code"]
 
                 if n_retry > 1:
                     break
 
-            # self.code2file(offspring['code'])
+            # Evaluate the offspring with concurrency
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(self.interface_eval.evaluate, code)
+                future = executor.submit(self.interface_eval.evaluate, code_modified)
                 fitness = future.result(timeout=self.timeout)
                 offspring["objective"] = np.round(fitness, 5)
                 future.cancel()
-                # fitness = self.interface_eval.evaluate(code)
 
         except Exception as e:
+            if self.debug:
+                print(f"Error in get_offspring: {e}")
 
             offspring = {
                 "algorithm": None,
@@ -255,29 +343,25 @@ class InterfaceEC:
             }
             p = None
 
-        # Round the objective values
         return p, offspring
 
-    # def process_task(self,pop, operator):
-    #     result =  None, {
-    #             'algorithm': None,
-    #             'code': None,
-    #             'objective': None,
-    #             'other_inf': None
-    #         }
-    #     with concurrent.futures.ThreadPoolExecutor() as executor:
-    #         future = executor.submit(self.get_offspring, pop, operator)
-    #         try:
-    #             result = future.result(timeout=self.timeout)
-    #             future.cancel()
-    #             #print(result)
-    #         except:
-    #             future.cancel()
+    def get_algorithm(
+        self, pop: list[dict[str, object]], operator: str
+    ) -> tuple[list[list[dict[str, object]] | None], list[dict[str, object]]]:
+        """
+        Generate 'pop_size' offspring using the given operator in parallel,
+        each with a separate job, then wait up to (timeout+15) seconds for all jobs.
 
-    #     return result
+        Args:
+            pop: Current population.
+            operator: The evolutionary operator to apply.
 
-    def get_algorithm(self, pop, operator):
-        results = []
+        Returns:
+            (parents_list, offspring_list)
+            - parents_list: A list of parents used for each offspring.
+            - offspring_list: A list of offspring dictionaries.
+        """
+        results: list[tuple[list[dict[str, object]] | None, dict[str, object]]] = []
         try:
             results = Parallel(n_jobs=self.n_p, timeout=self.timeout + 15)(
                 delayed(self.get_offspring)(pop, operator) for _ in range(self.pop_size)
@@ -289,48 +373,32 @@ class InterfaceEC:
 
         time.sleep(2)
 
-        out_p = []
-        out_off = []
+        out_p: list[list[dict[str, object]] | None] = []
+        out_off: list[dict[str, object]] = []
 
         for p, off in results:
             out_p.append(p)
             out_off.append(off)
             if self.debug:
-                print(f">>> check offsprings: \n {off}")
+                print(f">>> check offspring: \n {off}")
+
         return out_p, out_off
 
-    # def get_algorithm(self,pop,operator, pop_size, n_p):
+    # Example stubs for optional operators (f1, c1, p1):
+    def get_failure_cases(self, parent: dict[str, object]) -> list[object]:
+        """
+        Stub function to retrieve failure cases for 'f1' operator.
+        """
+        return []
 
-    #     # perform it pop_size times with n_p processes in parallel
-    #     p,offspring = self._get_alg(pop,operator)
-    #     while self.check_duplicate(pop,offspring['code']):
-    #         if self.debug:
-    #             print("duplicated code, wait 1 second and retrying ... ")
-    #         time.sleep(1)
-    #         p,offspring = self._get_alg(pop,operator)
-    #     self.code2file(offspring['code'])
-    #     try:
-    #         fitness= self.interface_eval.evaluate()
-    #     except:
-    #         fitness = None
-    #     offspring['objective'] =  fitness
-    #     #offspring['other_inf'] =  first_gap
-    #     while (fitness == None):
-    #         if self.debug:
-    #             print("warning! error code, retrying ... ")
-    #         p,offspring = self._get_alg(pop,operator)
-    #         while self.check_duplicate(pop,offspring['code']):
-    #             if self.debug:
-    #                 print("duplicated code, wait 1 second and retrying ... ")
-    #             time.sleep(1)
-    #             p,offspring = self._get_alg(pop,operator)
-    #         self.code2file(offspring['code'])
-    #         try:
-    #             fitness= self.interface_eval.evaluate()
-    #         except:
-    #             fitness = None
-    #         offspring['objective'] =  fitness
-    #         #offspring['other_inf'] =  first_gap
-    #     offspring['objective'] = np.round(offspring['objective'],5)
-    #     #offspring['other_inf'] = np.round(offspring['other_inf'],3)
-    #     return p,offspring
+    def get_constraints(self) -> dict[str, object]:
+        """
+        Stub function to retrieve constraints for 'c1' operator.
+        """
+        return {}
+
+    def get_complexity_target(self) -> float:
+        """
+        Stub function to retrieve complexity target for 'p1' operator.
+        """
+        return 0.0
