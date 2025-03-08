@@ -1,50 +1,50 @@
 [
      {
-          "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value-to-weight ratios and better utilization of the remaining capacity are prioritized.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalty term to prioritize items that better utilize the remaining capacity\n    score = value_to_weight_ratio + penalty\n    return score",
+          "algorithm": "The new algorithm scores each item based on a combination of the item's value, the cube of its value-to-weight ratio, and a logarithmic factor that penalizes items that consume a large portion of the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    log_factor = np.log(1 + remaining_capacity / weight)\n    score = value * (value_density ** 3) * log_factor\n    return score",
+          "objective": 0.00178,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm scores each item based on a weighted combination of its value-to-weight ratio and the ratio of its value to the remaining capacity, prioritizing items with higher value-to-weight ratios and better alignment with the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    value_to_capacity_ratio = value / remaining_capacity\n    score = 0.7 * value_to_weight_ratio + 0.3 * value_to_capacity_ratio\n    return score",
+          "objective": 0.0018,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The new algorithm scores each item based on a combination of the item's value, the square of its value-to-weight ratio, and an exponential decay factor that penalizes items that consume a large portion of the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    decay_factor = np.exp(-weight / remaining_capacity)\n    score = value * (value_density ** 2) * decay_factor\n    return score",
+          "objective": 0.00201,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value and lower weight are prioritized while also considering the knapsack's remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is a combination of value-to-weight ratio and a penalty term based on remaining capacity\n    value_to_weight_ratio = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalize items that leave less remaining capacity\n    score = value_to_weight_ratio + penalty\n    return score",
           "objective": 0.00222,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm is a greedy approach that scores items based on their value-to-weight ratio multiplied by a logarithmic factor of the remaining capacity, prioritizing items that not only have a high value-to-weight ratio but also leave more capacity for future items.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    log_factor = np.log(remaining_capacity + 1)  # Logarithmic factor to prioritize items that leave more capacity\n    score = value_to_weight_ratio * log_factor\n    return score",
-          "objective": 0.00257,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is based on the exponential decay of the remaining capacity and the value-to-weight ratio\n    value_to_weight = value / weight\n    remaining_capacity_ratio = remaining_capacity / (remaining_capacity + weight)\n    score = value_to_weight * np.exp(-remaining_capacity_ratio)\n    return score",
+          "objective": 0.00224,
           "other_inf": null
      },
      {
-          "algorithm": "The new algorithm scores items based on a combination of their value-to-weight ratio and a bonus for their value relative to the remaining capacity, prioritizing items that provide high value and fit well within the remaining capacity.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    value_bonus = value / remaining_capacity\n    score = value_to_weight_ratio + value_bonus\n    return score",
-          "objective": 0.00392,
+          "algorithm": "The new algorithm scores each item based on a combination of its value, the logarithm of its value-to-weight ratio, and a factor that rewards items that leave more remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # {The new algorithm scores each item based on a combination of its value, the logarithm of its value-to-weight ratio, and a factor that rewards items that leave more remaining capacity.}\n    value_density = value / weight\n    reward_factor = np.log(remaining_capacity / weight + 1)\n    score = value * np.log(value_density + 1) * reward_factor\n    return score",
+          "objective": 0.00232,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a logarithmic penalty for their weight relative to the remaining capacity, ensuring items with higher value-to-weight ratios and better utilization of the remaining capacity are prioritized.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    log_penalty = np.log(1 + (weight / remaining_capacity))\n    score = value_to_weight_ratio - log_penalty\n    return score",
-          "objective": 0.00589,
+          "algorithm": "The algorithm is a greedy approach that scores each item based on a combination of its value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value-to-weight ratios and better utilization of the remaining capacity are prioritized.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalty for unused capacity\n    score = value_to_weight_ratio - penalty\n    return score",
+          "objective": 0.0033,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and an exponential reward for their value relative to the remaining capacity, ensuring items with higher value-to-weight ratios and higher absolute value are prioritized.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    exp_reward = np.exp(value / remaining_capacity)\n    score = value_to_weight_ratio * exp_reward\n    return score",
-          "objective": 0.00608,
-          "other_inf": null
-     },
-     {
-          "algorithm": "The algorithm is a greedy approach that scores items based on their value-to-weight ratio adjusted by an exponential decay factor that penalizes items that leave too much remaining capacity unused, ensuring that items with higher value-to-weight ratios and better utilization of the remaining capacity are prioritized.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    decay_factor = np.exp(-(remaining_capacity - weight) / remaining_capacity)\n    score = value_to_weight_ratio * decay_factor\n    return score",
-          "objective": 0.0062,
-          "other_inf": null
-     },
-     {
-          "algorithm": "The new algorithm scores items based on the product of their value and the remaining capacity after including the item, prioritizing items that maximize the product of value and remaining capacity.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    remaining_after_inclusion = remaining_capacity - weight\n    score = value * remaining_after_inclusion\n    return score",
-          "objective": 0.00865,
-          "other_inf": null
-     },
-     {
-          "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a penalty for their weight relative to the remaining capacity, ensuring items that fit well and provide high value are prioritized.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    weight_penalty = weight / remaining_capacity\n    score = value_to_weight_ratio - weight_penalty\n    return score",
-          "objective": 0.00922,
+          "algorithm": "The new algorithm scores each item based on a combination of its value-to-weight ratio and the remaining capacity it would leave after selection, with a stronger emphasis on the value-to-weight ratio to prioritize items that offer higher value relative to their weight.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is a combination of value-to-weight ratio and the remaining capacity after selection, with a focus on maximizing value\n    value_to_weight = value / weight\n    remaining_capacity_after = remaining_capacity - weight\n    # Combine the two factors with a weighted sum, prioritizing value-to-weight ratio more heavily\n    score = 0.8 * value_to_weight + 0.2 * (remaining_capacity_after / remaining_capacity)\n    return score",
+          "objective": 0.00363,
           "other_inf": null
      }
 ]

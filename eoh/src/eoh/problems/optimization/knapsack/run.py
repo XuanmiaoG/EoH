@@ -139,15 +139,21 @@ class KNAPSACK:
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
+                # Print the code string for debugging
+                print("Evaluating function source:")
+                print(code_string)
+                
                 # Create a new, empty module to hold the candidate's code
                 heuristic_module = types.ModuleType("heuristic_module")
                 exec(code_string, heuristic_module.__dict__)
                 sys.modules[heuristic_module.__name__] = heuristic_module
-
+                
+                # Print the function object
+                print("Score function object:", getattr(heuristic_module, "score", None))
+                
                 # Evaluate the module's score function via greedy_knapsack
                 fitness = self.evaluateGreedy(heuristic_module)
                 return fitness
-
         except Exception as e:
             print("Error:", str(e))
             return None

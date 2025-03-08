@@ -1,6 +1,6 @@
 {
-     "algorithm": "The algorithm is a greedy approach that scores items based on a combination of their value-to-weight ratio and a penalty term that accounts for the remaining capacity, ensuring that items with higher value-to-weight ratios and better utilization of the remaining capacity are prioritized.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = 1 / (remaining_capacity - weight + 1)  # Penalty term to prioritize items that better utilize the remaining capacity\n    score = value_to_weight_ratio + penalty\n    return score",
-     "objective": 0.00222,
+     "algorithm": "The new algorithm scores each item based on a combination of the item's value, the cube of its value-to-weight ratio, and a logarithmic factor that penalizes items that consume a large portion of the remaining capacity.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    log_factor = np.log(1 + remaining_capacity / weight)\n    score = value * (value_density ** 3) * log_factor\n    return score",
+     "objective": 0.00178,
      "other_inf": null
 }
