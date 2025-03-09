@@ -29,7 +29,7 @@ class KNAPSACK:
         """
         getdata = GetData()
         # Here we load instances with 50 items as an example.
-        self.instances, self.lb = getdata.get_instances("500")
+        self.instances, self.high_bound = getdata.get_instances("500")
         self.prompts = GetPrompts()
 
     def greedy_knapsack(self, items, capacity, score_func):
@@ -123,7 +123,9 @@ class KNAPSACK:
         avg_value = np.mean(values_obtained)
         if avg_value == 0:
             print("Warning: Candidate returned zero total value on all instances.")
-        baseline_avg = np.mean([self.lb[name] for name in self.instances.keys()])
+        baseline_avg = np.mean(
+            [self.high_bound[name] for name in self.instances.keys()]
+        )
         fitness = (baseline_avg - avg_value) / baseline_avg
         return fitness
 
