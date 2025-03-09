@@ -29,7 +29,7 @@ class KNAPSACK:
         """
         getdata = GetData()
         # Here we load instances with 50 items as an example.
-        self.instances, self.lb = getdata.get_instances("50")
+        self.instances, self.lb = getdata.get_instances("500")
         self.prompts = GetPrompts()
 
     def greedy_knapsack(self, items, capacity, score_func):

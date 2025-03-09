@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates the score by combining the item's value-to-weight ratio with a logarithmic adjustment factor based on the remaining capacity, to favor items that are more valuable per unit of weight while also considering how much space is left.",
-     "code": "import numpy as np\n\ndef adjusted_value_ratio(value, weight):\n    return value / (weight + 1)\n\ndef log_adjustment(remaining_capacity):\n    if remaining_capacity <= 0:\n        return 0\n    return np.log(remaining_capacity + 1)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = adjusted_value_ratio(value, weight)\n    adjustment = log_adjustment(remaining_capacity)\n    score = value_ratio * adjustment\n    return score",
-     "objective": 0.00248,
+     "algorithm": "The new algorithm calculates the score by considering the value-to-weight ratio and an exponential decay factor based on how much of the remaining capacity the item would use, favoring items that better utilize the available space.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Base score is the value-to-weight ratio\n    base_score = value / weight\n    # Exponential decay factor to prioritize items that fill more of the capacity\n    decay_factor = np.exp(-0.5 * (remaining_capacity - weight) / remaining_capacity)\n    score = base_score * (1 + decay_factor)\n    return score",
+     "objective": 0.00164,
      "other_inf": null
 }

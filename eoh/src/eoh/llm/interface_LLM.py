@@ -1,35 +1,87 @@
 from ..llm.api_general import InterfaceAPI
 from ..llm.api_local_llm import InterfaceLocalLLM
 
+
 class InterfaceLLM:
-    def __init__(self, api_endpoint, api_key, model_LLM,llm_use_local,llm_local_url, debug_mode):
-        self.api_endpoint = api_endpoint
-        self.api_key = api_key
-        self.model_LLM = model_LLM
-        self.debug_mode = debug_mode
-        self.llm_use_local = llm_use_local
-        self.llm_local_url = llm_local_url
+    """
+    The InterfaceLLM class provides a unified interface to either:
+      - A local LLM (via InterfaceLocalLLM), or
+      - A remote LLM API (via InterfaceAPI).
+
+    Strict Thought:
+      - We do not import 'typing'; we use Python 3.10+ union syntax only.
+      - We add docstrings and inline comments to clarify.
+
+    Usage:
+      1) Based on the constructor arguments (llm_use_local, api_endpoint, etc.),
+         we choose whether to instantiate InterfaceLocalLLM or InterfaceAPI.
+      2) We test the chosen LLM by sending a trivial prompt "1+1=?"
+         to ensure it responds correctly.
+      3) If no valid response, we terminate execution (exit).
+    """
+
+    def __init__(
+        self,
+        api_endpoint: str | None,
+        api_key: str | None,
+        model_LLM: str | None,
+        llm_use_local: bool,
+        llm_local_url: str | None,
+        debug_mode: bool,
+    ) -> None:
+        """
+        Constructor for InterfaceLLM.
+
+        Args:
+            api_endpoint: The remote LLM API endpoint (e.g., 'https://api.example.com/chat'),
+                          or None if local LLM is used.
+            api_key: The authorization key/token for the remote LLM, or None if local.
+            model_LLM: The model name/identifier (for remote usage).
+            llm_use_local: Whether we use a local LLM deployment (True) or a remote LLM API (False).
+            llm_local_url: The local server URL if llm_use_local=True.
+            debug_mode: If True, print debug info.
+
+        Raises:
+            SystemExit: If invalid config is found for local or remote usage.
+        """
+        self.api_endpoint: str | None = api_endpoint
+        self.api_key: str | None = api_key
+        self.model_LLM: str | None = model_LLM
+        self.debug_mode: bool = debug_mode
+        self.llm_use_local: bool = llm_use_local
+        self.llm_local_url: str | None = llm_local_url
 
         print("- check LLM API")
 
+        # Decide which LLM interface to use
         if self.llm_use_local:
-            print('local llm delopyment is used ...')
-            
-            if self.llm_local_url == None or self.llm_local_url == 'xxx' :
+            # We are using a local LLM
+            print("local llm delopyment is used ...")
+
+            # Check if URL is valid
+            if self.llm_local_url is None or self.llm_local_url == "xxx":
                 print(">> Stop with empty url for local llm !")
                 exit()
 
-            self.interface_llm = InterfaceLocalLLM(
-                self.llm_local_url
-            )
-
+            # Instantiate the local LLM interface
+            self.interface_llm = InterfaceLocalLLM(self.llm_local_url)
         else:
-            print('remote llm api is used ...')
+            # We are using a remote LLM API
+            print("remote llm api is used ...")
 
-            if self.api_key == None or self.api_endpoint ==None or self.api_key == 'xxx' or self.api_endpoint == 'xxx':
-                print(">> Stop with wrong API setting: Set api_endpoint (e.g., api.chat...) and api_key (e.g., kx-...) !")
+            # Check if API key/endpoint are valid
+            if (
+                self.api_key is None
+                or self.api_endpoint is None
+                or self.api_key == "xxx"
+                or self.api_endpoint == "xxx"
+            ):
+                print(
+                    ">> Stop with wrong API setting: set api_endpoint (e.g., api.chat...) and api_key (e.g., kx-...) !"
+                )
                 exit()
 
+            # Instantiate the remote LLM interface
             self.interface_llm = InterfaceAPI(
                 self.api_endpoint,
                 self.api_key,
@@ -37,20 +89,23 @@ class InterfaceLLM:
                 self.debug_mode,
             )
 
-            
-        res = self.interface_llm.get_response("1+1=?")
-
-        if res == None:
-            print(">> Error in LLM API, wrong endpoint, key, model or local deployment!")
+        # Test call to verify the LLM is responsive
+        test_response: str | None = self.interface_llm.get_response("1+1=?")
+        if test_response is None:
+            print(
+                ">> Error in LLM API, wrong endpoint, key, model or local deployment!"
+            )
             exit()
 
-        # choose LLMs
-        # if self.type == "API2D-GPT":
-        #     self.interface_llm = InterfaceAPI2D(self.key,self.model_LLM,self.debug_mode)
-        # else:
-        #     print(">>> Wrong LLM type, only API2D-GPT is available! \n")
+    def get_response(self, prompt_content: str) -> str | None:
+        """
+        Get response from the chosen LLM (local or remote).
 
-    def get_response(self, prompt_content):
-        response = self.interface_llm.get_response(prompt_content)
+        Args:
+            prompt_content: The prompt string we send to the LLM.
 
+        Returns:
+            The LLM's text response, or None if something went wrong.
+        """
+        response: str | None = self.interface_llm.get_response(prompt_content)
         return response

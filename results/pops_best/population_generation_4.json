@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates a score for each item by combining its value-to-weight ratio with a logarithmic penalty that increases as the remaining capacity of the knapsack decreases, promoting the selection of items that fit better as the knapsack fills.",
-     "code": "import numpy as np\n\ndef logarithmic_penalty(remaining_capacity, weight):\n    # A logarithmically increasing penalty based on how much capacity is left after adding the item\n    return -np.log(remaining_capacity + 1) / (weight + 1)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score combines the value-to-weight ratio and a logarithmically adjusted penalty for using up capacity\n    score = (value / weight) + logarithmic_penalty(remaining_capacity, weight)\n    return score",
-     "objective": 0.00216,
+     "algorithm": "The new algorithm calculates the score by considering the value-to-weight ratio and an exponential decay factor based on how much of the remaining capacity the item would use, favoring items that better utilize the available space.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Base score is the value-to-weight ratio\n    base_score = value / weight\n    # Exponential decay factor to prioritize items that fill more of the capacity\n    decay_factor = np.exp(-0.5 * (remaining_capacity - weight) / remaining_capacity)\n    score = base_score * (1 + decay_factor)\n    return score",
+     "objective": 0.00164,
      "other_inf": null
 }
