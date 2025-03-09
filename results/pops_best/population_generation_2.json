@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm scores each item based on a combination of the item's value, the cube of its value-to-weight ratio, and a logarithmic factor that penalizes items that consume a large portion of the remaining capacity.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    log_factor = np.log(1 + remaining_capacity / weight)\n    score = value * (value_density ** 3) * log_factor\n    return score",
-     "objective": 0.00178,
+     "algorithm": "The new algorithm calculates the score by combining the item's value-to-weight ratio with a logarithmic adjustment factor based on the remaining capacity, to favor items that are more valuable per unit of weight while also considering how much space is left.",
+     "code": "import numpy as np\n\ndef adjusted_value_ratio(value, weight):\n    return value / (weight + 1)\n\ndef log_adjustment(remaining_capacity):\n    if remaining_capacity <= 0:\n        return 0\n    return np.log(remaining_capacity + 1)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = adjusted_value_ratio(value, weight)\n    adjustment = log_adjustment(remaining_capacity)\n    score = value_ratio * adjustment\n    return score",
+     "objective": 0.00248,
      "other_inf": null
 }

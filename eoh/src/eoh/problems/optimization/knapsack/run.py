@@ -128,29 +128,23 @@ class KNAPSACK:
         return fitness
 
     def evaluate(self, code_string):
-        """
-        Dynamically create a module from a candidate code string and evaluate its 'score' function's performance.
-
-        :param code_string: A string of Python code that must define a function 'score(weight, value, remaining_capacity)'
-                           returning a numeric value (float or convertible to float).
-
-        :return: fitness (float) if the candidate code succeeds; None if any error occurs.
-        """
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 # Print the code string for debugging
                 print("Evaluating function source:")
                 print(code_string)
-                
+
                 # Create a new, empty module to hold the candidate's code
                 heuristic_module = types.ModuleType("heuristic_module")
                 exec(code_string, heuristic_module.__dict__)
                 sys.modules[heuristic_module.__name__] = heuristic_module
-                
+
                 # Print the function object
-                print("Score function object:", getattr(heuristic_module, "score", None))
-                
+                print(
+                    "Score function object:", getattr(heuristic_module, "score", None)
+                )
+
                 # Evaluate the module's score function via greedy_knapsack
                 fitness = self.evaluateGreedy(heuristic_module)
                 return fitness

@@ -28,6 +28,4 @@ paras.set_paras(
 
 # initilization
 evolution = eoh.EVOL(paras)
-
-# run
 evolution.run()
