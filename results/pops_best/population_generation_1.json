@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates a score for each item based on the logarithm of its value-to-weight ratio, scaled by the square root of the remaining capacity, to prioritize items that are more valuable per unit of weight and fit well within the available space.",
-     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Calculate the log of the value-to-weight ratio\n    log_value_per_weight = np.log(value / weight)\n    # Scale the score by the square root of the remaining capacity\n    score = log_value_per_weight * np.sqrt(remaining_capacity)\n    return score",
-     "objective": 0.00016,
+     "algorithm": "The new algorithm calculates a score based on the square root of the value, adjusted by the ratio of remaining capacity to item weight, and penalizes items that cannot fit into the knapsack.",
+     "code": "import numpy as np\n\ndef calculate_adjusted_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    adjustment = (remaining_capacity / weight) ** 0.5\n    return np.sqrt(value) * adjustment\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_adjusted_score(value, weight, remaining_capacity)\n    return score",
+     "objective": 0.00017,
      "other_inf": null
 }
