@@ -1,37 +1,41 @@
-from __future__ import annotations  # Enables postponed evaluation of type annotations
-
-"""
-Evaluation code for EoH on Online Bin Packing.
-
-More results may refer to:
-Fei Liu, Xialiang Tong, Mingxuan Yuan, Xi Lin, Fu Luo, Zhenkun Wang, Zhichao Lu, Qingfu Zhang,
-"Evolution of Heuristics: Towards Efficient Automatic Algorithm Design Using Large Language Model"
-ICML 2024, https://arxiv.org/abs/2401.02051.
-"""
-
 import importlib
 from types import ModuleType
 from typing import Any
 
-from get_instance import GetData  # Module to load bin packing instances.
-from evaluation import Evaluation  # Module providing evaluation routines.
+from get_instance import GetData  # Module to load knapsack instances.
+from evaluation import (
+    Evaluation,
+)  # Module providing evaluation routines for 0-1 knapsack.
 
 
 def main() -> None:
     """
-    Main function to run evaluation on online bin packing instances.
+    Main function to run evaluation on 0-1 knapsack instances.
 
     It iterates through various capacities and dataset sizes, dynamically loads
     the heuristic module, evaluates each instance using a greedy evaluation routine,
     and writes the results to 'results.txt'.
+
+    Assumptions:
+      - `GetData().get_instances(...)` returns:
+            (instances, lb)
+        where:
+          - instances is a dict[str, Any], mapping each instance name to its data:
+                {
+                  "capacity": int,
+                  "weights": list[int],
+                  "values": list[int],
+                  ...
+                }
+          - lb is a dict[str, float], mapping each instance name to the optimal (or best known) total value.
     """
     # Create an Evaluation instance for running evaluations.
     eva: Evaluation = Evaluation()
 
-    # Define a list of bin capacities.
+    # Example: define a list of knapsack capacities.
     capacity_list: list[int] = [100, 300, 500]
-    # Define a list of dataset sizes.
-    size_list: list[str] = ["1k", "5k", "10k"]
+    # Example: define a list of dataset sizes (use whatever naming convention your get_instances supports).
+    size_list: list[str] = ["50", "100", "200"]
 
     # Open the output file in write mode.
     with open("results.txt", "w") as file:
@@ -41,26 +45,35 @@ def main() -> None:
             for size in size_list:
                 # Instantiate GetData to load the appropriate dataset.
                 getdata: GetData = GetData()
-                # Retrieve instances and lower bounds.
-                # Expected to return a tuple:
-                #   - instances: dict[str, Any] where keys are instance names and values are datasets.
-                #   - lb: dict[str, float] where keys are instance names and values are lower bounds.
-                instances, lb = getdata.get_instances(
-                    capacity, size
-                )  # type: tuple[dict[str, Any], dict[str, float]]
+                # Retrieve instances and their known-optimal values (lb).
+                #   - `instances` is a dict of: { instance_name: { "capacity": ..., "weights": [...], "values": [...] } }
+                #   - `lb` is a dict of: { instance_name: best_known_value }
+                instances, lb = getdata.get_instances(size=size, capacity=capacity)
 
                 # Dynamically import the heuristic module and reload it.
+                # The 'heuristic' module is expected to define a `score(weight, value, remaining_capacity) -> float`.
                 heuristic_module: ModuleType = importlib.import_module("heuristic")
                 heuristic_module = importlib.reload(heuristic_module)
 
                 # Evaluate each instance in the dataset.
                 for name, dataset in instances.items():
-                    # The evaluation method returns a negative value; we negate it to get the average number of bins.
-                    avg_num_bins: float = -eva.evaluateGreedy(dataset, heuristic_module)
-                    # Calculate the relative excess over the lower bound.
-                    excess: float = (avg_num_bins - lb[name]) / lb[name]
-                    # Format the result as a string.
-                    result: str = f"{name}, {capacity}, Excess: {100 * excess:.2f}%"
+                    # Wrap the single instance into a dictionary before passing to evaluateGreedy.
+                    total_value: float = eva.evaluateGreedy(
+                        {name: dataset}, heuristic_module
+                    )
+                    # `lb[name]` is presumably the optimal or best-known total value.
+                    # Compute how far off (or above/below) we are from optimal:
+                    # gap (relative) = (Optimal - Achieved) / Optimal
+                    gap: float = (
+                        (lb[name] - total_value) / lb[name] if lb[name] != 0 else 0
+                    )
+
+                    # Format the result as a string. You can multiply by 100 to express as a percentage.
+                    result: str = (
+                        f"Instance: {name}, Capacity: {capacity}, "
+                        f"Achieved: {total_value:.2f}, Optimal: {lb[name]:.2f}, "
+                        f"Gap: {gap * 100:.2f}%"
+                    )
                     print(result)
                     # Write the result to the output file.
                     file.write(result + "\n")
