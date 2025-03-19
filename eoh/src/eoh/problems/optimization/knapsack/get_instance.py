@@ -1,3 +1,4 @@
+from __future__ import annotations  # Enables postponed evaluation of type annotations
 import numpy as np
 
 
@@ -72,7 +73,7 @@ class GetData:
             (Optional) If provided, this integer will be used as the fixed knapsack capacity
             for all instances. If None, the capacity is set to floor(0.5 * sum_of_weights).
         :param count:
-            Number of instances to generate for the given size. Default is 5.
+            Number of instances to generate for the given size. Default is 50.
 
         We generate random weights in [1, 100] and values in [10, 200].
         If capacity is None, the capacity is set to floor(0.5 * sum_of_weights).
@@ -91,6 +92,9 @@ class GetData:
               - baseline (dict[str, int]):
                   A dictionary mapping each instance name to the optimal solution value.
         """
+        # Set a fixed random seed for reproducibility
+        np.random.seed(42)
+
         size_int: int = int(size)
         instances: dict[str, dict[str, int | list[int]]] = {}
         baseline: dict[str, int] = {}
@@ -102,12 +106,10 @@ class GetData:
             weights: list[int] = np.random.randint(1, 101, size_int).tolist()
             values_arr: list[int] = np.random.randint(10, 201, size_int).tolist()
 
-            # Compute capacity
+            # Compute capacity: if None, use 50% of the total weight; otherwise, use provided capacity (at least 1)
             if capacity is None:
-                # Use 50% of the total weight
                 cap: int = int(0.5 * sum(weights))
             else:
-                # Use the provided capacity if > 0, else 1
                 cap = max(1, capacity)
 
             # Build the instance data
