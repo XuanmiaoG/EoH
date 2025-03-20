@@ -34,7 +34,7 @@ def main() -> None:
 
     # Example: define a list of knapsack capacities.
     capacity_list: list[int] = [100, 300, 500]
-    # Example: define a list of dataset sizes (use whatever naming convention your get_instances supports).
+    # Example: define a list of dataset sizes.
     size_list: list[str] = ["50", "100", "200"]
 
     # Open the output file in write mode.
@@ -43,6 +43,8 @@ def main() -> None:
         for capacity in capacity_list:
             # Iterate over each dataset size.
             for size in size_list:
+                total_gap: float = 0
+                total_size: int = 0
                 # Instantiate GetData to load the appropriate dataset.
                 getdata: GetData = GetData()
                 # Retrieve instances and their known-optimal values (lb).
@@ -70,13 +72,20 @@ def main() -> None:
 
                     # Format the result as a string. You can multiply by 100 to express as a percentage.
                     result: str = (
-                        f"Instance: {name}, Capacity: {capacity}, "
+                        f"Instance: {name}, Capacity: {capacity}, Size: {size}, "
                         f"Achieved: {total_value:.2f}, Optimal: {lb[name]:.2f}, "
                         f"Gap: {gap * 100:.2f}%"
                     )
+                    total_gap += gap
+                    total_size += 1
                     print(result)
                     # Write the result to the output file.
                     file.write(result + "\n")
+                # Calculate the average gap for the current capacity and size.
+                avg_gap: float = total_gap / total_size
+                print(
+                    f"Average gap for capacity {capacity}, size {size}: {avg_gap * 100:.2f}%"
+                )
 
 
 if __name__ == "__main__":
