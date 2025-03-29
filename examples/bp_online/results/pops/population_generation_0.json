@@ -1,0 +1,14 @@
+[
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with remaining capacity equal to their maximum capacity, ensuring bins are used efficiently to minimize the total number of bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Penalty for bins with remaining capacity equal to maximum capacity\n    penalty = np.where(bins == bins.max(), -np.inf, 0)\n    \n    # Score based on remaining capacity and item size\n    scores = (bins - item) / bins + penalty\n    \n    return scores",
+          "objective": 0.13211,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm assigns a score to each bin based on a weighted combination of the bin's remaining capacity, the item size, and a penalty for bins with remaining capacity equal to their maximum capacity, ensuring bins are used efficiently to minimize the total number of bins.",
+          "code": "import numpy as np\n\ndef score(item, bins):\n    # Define weights for the scoring function\n    weight_capacity = 0.6  # Weight for remaining capacity\n    weight_item = 0.3       # Weight for item size\n    weight_penalty = 0.1    # Weight for penalty on full bins\n    \n    # Calculate the scores\n    scores = (weight_capacity * bins) - (weight_item * item) - (weight_penalty * (bins == bins.max()))\n    \n    return scores",
+          "objective": 1.51534,
+          "other_inf": null
+     }
+]

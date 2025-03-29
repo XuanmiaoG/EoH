@@ -1,0 +1,6 @@
+{
+     "algorithm": "The new algorithm assigns a score to each bin based on a logarithmic transformation of the remaining capacity relative to the item size, combined with a dynamic penalty that increases exponentially for bins with remaining capacity close to their maximum capacity, ensuring efficient bin usage and minimizing the total number of bins.",
+     "code": "import numpy as np\n\ndef score(item, bins):\n    # Dynamic penalty for bins with remaining capacity close to maximum capacity\n    penalty = np.exp(-(bins.max() - bins) / bins.max()) * (bins == bins.max()) * -np.inf\n    \n    # Logarithmic transformation of remaining capacity relative to item size\n    scores = np.log1p((bins - item) / bins) + penalty\n    \n    return scores",
+     "objective": 0.04226,
+     "other_inf": null
+}

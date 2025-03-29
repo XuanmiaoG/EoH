@@ -1,0 +1,50 @@
+[
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, prioritizing items that offer the best value-to-weight ratio while also considering how much of the item's weight can be utilized given the current capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score is a combination of value-to-weight ratio and the ratio of weight to remaining capacity,\n    # favoring items with high value per unit of weight and those that better fit the remaining space.\n    score = (value / weight) + (weight / (weight + remaining_capacity))\n    return score",
+          "objective": 0.00157,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm prioritizes items based on a score that combines the value-to-weight ratio and a penalty for how close the item's weight is to the remaining capacity, favoring items that utilize the knapsack space more efficiently.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Calculate the value-to-weight ratio\n    ratio = value / weight\n    # Calculate a penalty based on how close the item's weight is to the remaining capacity\n    penalty = 1 - (weight / remaining_capacity) if remaining_capacity > 0 else 0\n    # The final score is a combination of the ratio and the penalty\n    score = ratio * (1 + penalty)\n    return score",
+          "objective": 0.00504,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value-to-weight ratio, adjusted by the remaining capacity of the knapsack, to prioritize items that offer the best value without exceeding the weight limit.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Calculate the score using a combination of value-to-weight ratio and a penalty for high weights\n    score = (value / weight) * (1 - (weight / (remaining_capacity + 1)))\n    return score",
+          "objective": 0.00534,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, favoring items that provide more value per unit of weight while also considering how close their weight is to the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # The scoring mechanism combines the value-to-weight ratio with a penalty for items that are much lighter than the remaining capacity,\n    # encouraging the selection of items that closely match the remaining space when possible.\n    score = (value / weight) + (remaining_capacity - weight) / (remaining_capacity + 1)\n    return score",
+          "objective": 0.00577,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm selects items based on a score that combines the item's value-to-weight ratio, the remaining capacity, and a penalty for items that are too heavy, aiming to maximize the total value within the weight limit.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    else:\n        # Calculate the value-to-weight ratio\n        value_to_weight_ratio = value / weight\n        # Introduce a penalty factor for items that are close to the remaining capacity\n        penalty_factor = 1 - (weight / remaining_capacity) ** 2\n        # The score is a combination of the value-to-weight ratio and the penalty factor\n        score = value_to_weight_ratio * penalty_factor\n        return score",
+          "objective": 0.00858,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, prioritizing items that offer the best value-to-weight ratio while also considering how close their weight is to the remaining capacity.",
+          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Score function: (Value/Weight) + (Remaining Capacity - Weight) / Remaining Capacity\n    score = (value / weight) + ((remaining_capacity - weight) / remaining_capacity)\n    return score",
+          "objective": 0.01283,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, favoring items with higher value-to-weight ratios while penalizing those that are too large relative to the remaining space.",
+          "code": "import numpy as np\n\ndef adjusted_value_to_weight_ratio(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    else:\n        # Adjust the ratio by considering the remaining capacity, to give preference to items that fit better\n        adjustment_factor = 1 - (weight / remaining_capacity)\n        return (value / weight) * adjustment_factor\n\ndef score(weight, value, remaining_capacity):\n    score = adjusted_value_to_weight_ratio(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.01353,
+          "other_inf": null
+     },
+     {
+          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, favoring items that offer the best value-to-weight ratio while also considering how close their weight is to the remaining capacity.",
+          "code": "import numpy as np\n\ndef adjusted_value_ratio(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    return (value / weight) * (1 + 1 / (weight - remaining_capacity + 1))\n\ndef score(weight, value, remaining_capacity):\n    score = adjusted_value_ratio(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.02403,
+          "other_inf": null
+     }
+]

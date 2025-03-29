@@ -1,0 +1,6 @@
+{
+     "algorithm": "The new algorithm calculates a score based on the logarithm of the value-to-weight ratio, adjusted by an exponential factor that penalizes items with weights significantly lower than the remaining capacity, promoting a balance between item value and space utilization.",
+     "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Calculate the log of the value-to-weight ratio\n    log_ratio = np.log(value / weight)\n    # Exponential penalty for items much lighter than the remaining capacity\n    exp_penalty = np.exp(-weight / (remaining_capacity + 1))\n    # The final score combines the log ratio and the exponential penalty\n    score = log_ratio * exp_penalty\n    return score",
+     "objective": 0.00088,
+     "other_inf": null
+}
