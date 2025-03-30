@@ -1,98 +1,26 @@
 [
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_modified_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / (weight + 1e-9)\n    capacity_factor = (remaining_capacity - weight + 1) ** 0.5\n    score = normalized_value * capacity_factor + np.log(value + 1)\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_modified_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00081,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    score = (value * capacity_ratio) + (value / weight)\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
           "objective": 0.00107,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_hybrid_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / (weight + 1e-9)\n    capacity_utilization = (remaining_capacity - weight) / remaining_capacity\n    return value_density * np.sqrt(value) * (1 + capacity_utilization)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_hybrid_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00126,
+          "code": "import numpy as np\n\ndef calculate_tanh_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    ratio = value / weight\n    tanh_factor = np.tanh(remaining_capacity / weight)\n    return ratio * tanh_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_tanh_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.0027,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    score = value * capacity_ratio * (1 + np.log(value + 1))\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00135,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    value_density = value / weight\n    return value_density * capacity_ratio * np.log(value + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00154,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / np.max([value, 1])\n    normalized_weight = weight / np.max([weight, 1])\n    capacity_utilization = (remaining_capacity - weight) / remaining_capacity\n    return (normalized_value * capacity_utilization) + (normalized_value / normalized_weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00164,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / np.sqrt(weight)\n    capacity_utilization = (remaining_capacity - weight) / remaining_capacity\n    return normalized_value * (1 + capacity_utilization)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00166,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / (weight + 1e-9)\n    capacity_ratio = (remaining_capacity - weight) / remaining_capacity\n    score = value_density * (1 + np.exp(capacity_ratio)) + np.sqrt(value)\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00218,
+          "code": "import numpy as np\n\ndef calculate_power_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / weight\n    capacity_factor = (remaining_capacity - weight + 1) ** 0.5\n    return normalized_value * capacity_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_power_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00275,
           "other_inf": null
      },
      {
           "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_hybrid_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_factor = np.sqrt(remaining_capacity / (remaining_capacity - weight + 1e-9))\n    return (value_ratio ** 2) * capacity_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_hybrid_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00239,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_exponential_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_utilization = weight / remaining_capacity\n    return np.exp(value_density) * (1 - capacity_utilization) * value\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_exponential_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00241,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_modified_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / (remaining_capacity + weight)\n    value_density = value / weight\n    return (value_density + capacity_ratio) * np.sqrt(value)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_modified_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00243,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_logarithmic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = weight / remaining_capacity\n    return np.log(value_density + 1) * (1 - capacity_ratio) * value\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logarithmic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00246,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * (1 - normalized_weight)) * (value / weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00247,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (value + weight)\n    capacity_utilization = (remaining_capacity - weight) / remaining_capacity\n    return (value_ratio * capacity_utilization) * np.log(value + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00251,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_exponential_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / (weight + 1e-9)\n    capacity_factor = np.exp(remaining_capacity - weight)\n    return normalized_value * capacity_factor * (value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_exponential_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00263,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_modified_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_ratio = remaining_capacity / (weight + 1e-9)\n    return value_ratio * np.sqrt(capacity_ratio) * (value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_modified_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00293,
+          "code": "import numpy as np\n\ndef calculate_logistic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / np.max([value, 1])\n    normalized_weight = weight / np.max([weight, 1])\n    logistic_factor = 1 / (1 + np.exp(-(remaining_capacity - weight)))\n    return (normalized_value / normalized_weight) * logistic_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logistic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00298,
           "other_inf": null
      }
 ]

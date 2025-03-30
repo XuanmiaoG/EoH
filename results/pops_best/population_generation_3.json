@@ -1,6 +1,6 @@
 {
-     "algorithm": "The new algorithm calculates a score based on the exponential of the value-to-weight ratio, adjusted by the natural logarithm of the remaining capacity, and penalizes items that cannot fit into the knapsack.",
-     "code": "import numpy as np\n\ndef calculate_adjusted_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    adjustment = np.log(remaining_capacity + 1)\n    base_score = (value / weight) ** 2\n    return np.exp(base_score) * adjustment\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_adjusted_score(value, weight, remaining_capacity)\n    return score",
-     "objective": 0.00016,
+     "algorithm": "```",
+     "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+     "objective": 0.00107,
      "other_inf": null
 }
