@@ -1,4 +1,5 @@
-from __future__ import annotations  # Enables postponed evaluation of type annotations
+# Enables postponed evaluation of type annotations
+from __future__ import annotations
 import numpy as np
 import os
 
@@ -30,12 +31,12 @@ def dp_knapsack_01(weights: list[float], values: list[float], capacity: float) -
     :return: the maximum total value achievable
     """
     n: int = len(weights)
-    
+
     # Convert floats to integers by scaling for DP
     scale_factor = 10000
     int_weights = [int(w * scale_factor) for w in weights]
     int_capacity = int(capacity * scale_factor)
-    
+
     dp: list[float] = [0] * (int_capacity + 1)
 
     for i in range(n):
@@ -62,8 +63,8 @@ class GetData:
 
     def get_instances(
         self,
-        size: str = "100",
-        capacity: float | None = None,
+        N: str = "100",
+        W: float | None = None,
         count: int = 64,
         mode: str = "train",
         dataset_path: str = "dataset",
@@ -106,54 +107,56 @@ class GetData:
               - baseline (dict[str, float]):
                   A dictionary mapping each instance name to the optimal solution value.
         """
-        file_name = f"{mode}{size}_dataset.npy"
+        file_name = f"{mode}{N}_dataset.npy"
         file_path = os.path.join(dataset_path, file_name)
-        
+
         # Load the dataset from .npy file
         try:
             data = np.load(file_path)
         except FileNotFoundError:
             raise FileNotFoundError(f"Dataset file not found: {file_path}")
-        
+
         # Set default capacity based on problem size
-        if capacity is None:
-            if size == "50":
-                capacity = 12.5
+        if W is None:
+            if N == "50":
+                W = 12.5
             else:
-                capacity = 25.0
-        
-        size_int: int = int(size)
+                W = 25.0
+
+        size_int: int = int(N)
         instances: dict[str, dict[str, float | list[float]]] = {}
         baseline: dict[str, float] = {}
-        
+
         # Determine how many instances to load (min of available instances and requested count)
         n_instances = min(data.shape[0], count)
-        
+
         for i in range(n_instances):
-            instance_name: str = f"{mode}_{size}_{i+1}"
-            
+            instance_name: str = f"{mode}_{N}_{i+1}"
+
             # Extract weights and values
-            weights: list[float] = data[i, :, 0].tolist()  # First column is weights
-            values: list[float] = data[i, :, 1].tolist()   # Second column is values
-            
+            # First column is weights
+            weights: list[float] = data[i, :, 0].tolist()
+            # Second column is values
+            values: list[float] = data[i, :, 1].tolist()
+
             # Build the instance data
             instance_data: dict[str, float | list[float] | int] = {
-                "capacity": capacity,
+                "capacity": W,
                 "num_items": size_int,
                 "weights": weights,
                 "values": values,
             }
             instances[instance_name] = instance_data
-            
+
             # Compute the optimal solution via DP
             try:
-                optimal_value: float = dp_knapsack_01(weights, values, capacity)
+                optimal_value: float = dp_knapsack_01(weights, values, W)
                 baseline[instance_name] = optimal_value
             except Exception as e:
                 print(f"Error computing optimal for {instance_name}: {e}")
                 # For very large instances, DP might be too slow or memory-intensive
                 baseline[instance_name] = -1.0
-        
+
         return instances, baseline
 
 
@@ -161,18 +164,18 @@ class GetData:
 if __name__ == "__main__":
     # Create an instance of the GetData class
     data_loader = GetData()
-    
+
     # Load training instances with 100 items
     train_instances, train_optimal = data_loader.get_instances(
-        size="100", 
+        N="100",
         mode="train",
         count=5  # Just load 5 for quick testing
     )
-    
+
     # Print details of the first instance
     first_instance_name = next(iter(train_instances))
     first_instance = train_instances[first_instance_name]
-    
+
     print(f"Instance: {first_instance_name}")
     print(f"  Capacity: {first_instance['capacity']}")
     print(f"  Number of items: {first_instance['num_items']}")
