@@ -1,4 +1,3 @@
-# Enables postponed evaluation of type annotations
 from __future__ import annotations
 import numpy as np
 import os
@@ -7,178 +6,222 @@ import os
 def dp_knapsack_01(weights: list[float], values: list[float], capacity: float) -> float:
     """
     Compute the optimal (maximum) total value for the 0-1 Knapsack problem
-    via dynamic programming, using a 1D DP array.
+    using a Branch and Bound approach (exact) for floating-point weights/capacities.
 
-    Adapted to work with float weights and values from the existing dataset.
+    This function signature remains the same, but internally it does NOT use
+    classic DP. Instead, it uses a Branch and Bound strategy.
 
-    Let:
-      - n = number of items
-      - W = capacity of the knapsack
-      - w_i = weight of item i
-      - v_i = value of item i
+    Parameters
+    ----------
+    weights : list[float]
+        A list of item weights (floating-point).
+    values : list[float]
+        A list of item values (floating-point).
+    capacity : float
+        The total knapsack capacity (floating-point).
 
-    We define the DP array as:
-        dp[c] = maximum possible value achievable using capacity c
-
-    Transition Formula (iterating in reverse order for capacity):
-        dp[c] = max( dp[c], dp[c - w_i] + v_i ),  if c >= w_i
-
-    The time complexity is O(n * W).
-
-    :param weights: list of item weights
-    :param values: list of item values
-    :param capacity: total knapsack capacity
-    :return: the maximum total value achievable
+    Returns
+    -------
+    float
+        The maximum total value achievable under 0-1 constraints.
     """
+
     n: int = len(weights)
+    if n == 0 or capacity <= 1e-9:
+        return 0.0
 
-    # Convert floats to integers by scaling for DP
-    scale_factor = 10000
-    int_weights = [int(w * scale_factor) for w in weights]
-    int_capacity = int(capacity * scale_factor)
+    # Sort items in descending order of value/weight ratio for better bounding
+    items_sorted: list[tuple[float, int]] = [
+        (values[i] / weights[i], i) for i in range(n)
+    ]
+    items_sorted.sort(key=lambda x: x[0], reverse=True)
 
-    dp: list[float] = [0] * (int_capacity + 1)
+    best_value: float = 0.0
 
-    for i in range(n):
-        w_i: int = int_weights[i]
-        v_i: float = values[i]
-        # Iterate capacity in reverse to avoid using updated dp values prematurely
-        for c in range(int_capacity, w_i - 1, -1):
-            dp[c] = max(dp[c], dp[c - w_i] + v_i)
+    def bound(idx: int, current_val: float, remaining_cap: float) -> float:
+        """
+        Estimate the upper bound (potential maximum value) from items_sorted[idx:]
+        using a fractional knapsack assumption. This helps prune the search space.
+        """
+        total_val: float = current_val
+        for j in range(idx, n):
+            ratio_j, item_idx = items_sorted[j]
+            w_j: float = weights[item_idx]
+            v_j: float = values[item_idx]
+            if w_j <= remaining_cap:
+                remaining_cap -= w_j
+                total_val += v_j
+            else:
+                # Take only the fraction we can fit
+                total_val += ratio_j * remaining_cap
+                break
+        return total_val
 
-    return dp[int_capacity]
+    def backtrack(
+        idx: int, current_val: float, remaining_cap: float, used_indices: set[int]
+    ) -> None:
+        nonlocal best_value
+
+        if current_val > best_value:
+            best_value = current_val
+
+        # Stop if we've exhausted items or capacity
+        if idx >= n or remaining_cap <= 1e-9:
+            return
+
+        # Upper bound check
+        est: float = bound(idx, current_val, remaining_cap)
+        if est <= best_value:
+            return
+
+        ratio_i, real_idx = items_sorted[idx]
+        w_i: float = weights[real_idx]
+        v_i: float = values[real_idx]
+
+        # Branch 1: do not take this item
+        backtrack(idx + 1, current_val, remaining_cap, used_indices)
+
+        # Branch 2: take this item if it fits
+        if w_i <= remaining_cap:
+            used_indices.add(real_idx)
+            backtrack(idx + 1, current_val + v_i, remaining_cap - w_i, used_indices)
+            used_indices.remove(real_idx)
+
+    backtrack(0, 0.0, capacity, set())
+    return best_value
 
 
 class GetData:
     """
-    A class for loading existing Knapsack datasets and computing 
-    their optimal solutions using the dp_knapsack_01 function.
+    A class for loading 0-1 Knapsack datasets and computing
+    their optimal solutions using dp_knapsack_01.
     """
 
     def __init__(self) -> None:
         """
-        Constructor initializing an empty datasets dictionary.
+        Constructor that initializes an empty dictionary for datasets.
         """
-        self.datasets: dict[str, dict[str, int | list[int]]] = {}
+        self.datasets: dict[str, dict[str, float | list[float]]] = {}
 
     def get_instances(
         self,
-        N: str = "100",
-        W: float | None = None,
-        count: int = 64,
+        size: str = "100",
+        capacity: float | None = None,
         mode: str = "train",
-        dataset_path: str = "dataset",
+        dataset_path: str = "evaluation_kp/dataset",
     ) -> tuple[dict[str, dict[str, float | list[float]]], dict[str, float]]:
         """
-        Load multiple 0-1 Knapsack instances from the existing dataset files,
-        and compute the **optimal** solution values for each instance.
+        Load multiple 0-1 Knapsack instances from a .npy file and compute
+        the optimal solution for each instance using dp_knapsack_01.
 
         Each instance includes:
-            - capacity   (float)      : the knapsack capacity
-            - num_items  (int)        : number of items in the instance
-            - weights    (list[float]): list of item weights
-            - values     (list[float]): list of item values
+            - "capacity"   (float)      : the knapsack capacity
+            - "num_items"  (int)        : the number of items in the instance
+            - "weights"    (list[float]): a list of item weights
+            - "values"     (list[float]): a list of item values
 
-        :param size:
-            A string representing the number of items (e.g., '50', '100', '200', '500').
-        :param capacity:
-            (Optional) If provided, this value will be used as the fixed knapsack capacity
-            for all instances. If None, capacity is set based on problem size:
-            - 12.5 for size 50
-            - 25.0 for other sizes
-        :param count:
-            Number of instances to load. Default is 64.
-        :param mode:
-            Dataset mode: 'train', 'val', or 'test'. Default is 'train'.
-        :param dataset_path:
-            Path to the dataset directory. Default is 'dataset'.
+        Parameters
+        ----------
+        size : str
+            A string indicating the number of items (e.g., "50", "100", "200", "500").
+        capacity : float, optional
+            If provided, this float is used as the knapsack capacity for all instances.
+            If None, a default capacity is chosen based on 'size' (12.5 for size '50', else 25.0).
+        mode : str
+            One of 'train', 'val', or 'test'. This determines which .npy file to load,
+            e.g., f"{mode}{size}_dataset.npy".
+        dataset_path : str
+            Path to the dataset directory. Default is "evaluation_kp/dataset".
 
-        :return:
-            (instances, baseline) as a 2-tuple:
-              - instances (dict[str, dict[str, float | list[float]]]):
-                  A dictionary of loaded instances.
-                  Each key is an instance name, each value is a dictionary containing:
-                    {
+        Returns
+        -------
+        tuple
+            A 2-tuple containing:
+              - instances : dict[str, dict[str, float | list[float]]]
+                  {
+                    "instance_name": {
                       "capacity": float,
                       "num_items": int,
                       "weights": list[float],
                       "values": list[float]
                     }
-              - baseline (dict[str, float]):
-                  A dictionary mapping each instance name to the optimal solution value.
+                  }
+              - baseline  : dict[str, float]
+                  {
+                    "instance_name": optimal_value (float)
+                  }
         """
-        file_name = f"{mode}{N}_dataset.npy"
-        file_path = os.path.join(dataset_path, file_name)
+        file_name: str = f"{mode}{size}_dataset.npy"
+        file_path: str = os.path.join(dataset_path, file_name)
 
-        # Load the dataset from .npy file
+        # Load the .npy file
         try:
-            data = np.load(file_path)
+            data: np.ndarray = np.load(file_path)
         except FileNotFoundError:
             raise FileNotFoundError(f"Dataset file not found: {file_path}")
 
-        # Set default capacity based on problem size
-        if W is None:
-            if N == "50":
-                W = 12.5
+        # Set default capacity if not provided
+        if capacity is None:
+            if size == "50":
+                capacity = 12.5
             else:
-                W = 25.0
+                capacity = 25.0
 
-        size_int: int = int(N)
+        size_int: int = int(size)
         instances: dict[str, dict[str, float | list[float]]] = {}
         baseline: dict[str, float] = {}
 
-        # Determine how many instances to load (min of available instances and requested count)
-        n_instances = min(data.shape[0], count)
+        # data.shape should be (num_instances, size_int, 2)
+        num_instances_in_file: int = data.shape[0]
+        n_instances: int = num_instances_in_file
 
         for i in range(n_instances):
-            instance_name: str = f"{mode}_{N}_{i+1}"
+            instance_name: str = f"{mode}_{size}_{i+1}"
 
-            # Extract weights and values
-            # First column is weights
-            weights: list[float] = data[i, :, 0].tolist()
-            # Second column is values
-            values: list[float] = data[i, :, 1].tolist()
+            # data[i] has shape (size_int, 2):
+            #   column 0 => weights
+            #   column 1 => values
+            weights_arr: list[float] = data[i, :, 0].tolist()
+            values_arr: list[float] = data[i, :, 1].tolist()
 
-            # Build the instance data
-            instance_data: dict[str, float | list[float] | int] = {
-                "capacity": W,
+            instance_data: dict[str, float | list[float]] = {
+                "capacity": capacity,
                 "num_items": size_int,
-                "weights": weights,
-                "values": values,
+                "weights": weights_arr,
+                "values": values_arr,
             }
             instances[instance_name] = instance_data
 
-            # Compute the optimal solution via DP
+            # Compute the optimal solution via Branch and Bound
             try:
-                optimal_value: float = dp_knapsack_01(weights, values, W)
-                baseline[instance_name] = optimal_value
-            except Exception as e:
-                print(f"Error computing optimal for {instance_name}: {e}")
-                # For very large instances, DP might be too slow or memory-intensive
+                opt_val: float = dp_knapsack_01(weights_arr, values_arr, capacity)
+                baseline[instance_name] = opt_val
+            except Exception as exc:
+                print(f"[ERROR] {instance_name}: {exc}")
                 baseline[instance_name] = -1.0
 
         return instances, baseline
 
 
-# Example usage
 if __name__ == "__main__":
-    # Create an instance of the GetData class
+    # Example usage: load "train100_dataset.npy" from "evaluation_kp/dataset" and compute solutions
     data_loader = GetData()
-
-    # Load training instances with 100 items
-    train_instances, train_optimal = data_loader.get_instances(
-        N="100",
+    instances_dict, baseline_dict = data_loader.get_instances(
+        size="100",
+        capacity=None,  # default capacity = 25.0 for size != "50"
         mode="train",
-        count=5  # Just load 5 for quick testing
+        dataset_path="evaluation_kp/dataset",
     )
 
-    # Print details of the first instance
-    first_instance_name = next(iter(train_instances))
-    first_instance = train_instances[first_instance_name]
-
-    print(f"Instance: {first_instance_name}")
-    print(f"  Capacity: {first_instance['capacity']}")
-    print(f"  Number of items: {first_instance['num_items']}")
-    print(f"  First 5 weights: {first_instance['weights'][:5]}")
-    print(f"  First 5 values: {first_instance['values'][:5]}")
-    print(f"  Optimal value: {train_optimal[first_instance_name]}")
+    # Print info about the first loaded instance
+    if instances_dict:
+        first_instance_name = next(iter(instances_dict))
+        inst_data = instances_dict[first_instance_name]
+        print(f"\nInstance: {first_instance_name}")
+        print(f"  capacity: {inst_data['capacity']}")
+        print(f"  num_items: {inst_data['num_items']}")
+        print(f"  first 5 weights: {inst_data['weights'][:5]}")
+        print(f"  first 5 values: {inst_data['values'][:5]}")
+        print(f"  optimal_value: {baseline_dict[first_instance_name]}")
+    else:
+        print("No instances loaded.")
