@@ -1,32 +1,80 @@
 [
      {
-          "algorithm": "The algorithm calculates a score for each item based on its value-to-weight ratio, adjusted by the remaining capacity of the knapsack, to prioritize items that offer the best value while fitting within the constraints.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Calculate the base score as the value-to-weight ratio\n    base_score = value / weight\n    # Adjust the score with a factor that increases as the remaining capacity decreases,\n    # making it more likely to pick items that fit better in the current capacity.\n    adjustment_factor = 1 + (remaining_capacity - weight) / (remaining_capacity + 1)\n    score = base_score * adjustment_factor\n    return score",
-          "objective": 0.00158,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    score = (value * capacity_ratio) + (value / weight)\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00107,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm calculates a score for each item based on a combination of its value-to-weight ratio and the remaining capacity, favoring items that provide the most value per unit of weight while also considering how much space is left in the knapsack.",
-          "code": "import numpy as np\n\ndef adjusted_value_to_weight_ratio(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    # Adjust the ratio to give preference to items that fit better with the remaining capacity\n    adjustment_factor = 1 - (weight / (remaining_capacity + 1))\n    return (value / weight) * adjustment_factor\n\ndef score(weight, value, remaining_capacity):\n    score = adjusted_value_to_weight_ratio(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00348,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    score = value * capacity_ratio * (1 + np.log(value + 1))\n    return float(score)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00135,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, prioritizing items that offer the best value per unit of weight while penalizing those that leave little room for other items.",
-          "code": "import numpy as np\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    efficiency = value / weight\n    penalty = 1 - (weight / remaining_capacity) if remaining_capacity > 0 else 0\n    score = efficiency * penalty\n    return score",
-          "objective": 0.0035,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    value_density = value / weight\n    return value_density * capacity_ratio * np.log(value + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00154,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm calculates a score for each item based on its value, weight, and the remaining capacity of the knapsack, favoring items that offer higher value per unit of weight but also considering how much of the item's weight can be utilized given the current capacity.",
-          "code": "import numpy as np\n\ndef adjusted_value(value, weight, remaining_capacity):\n    utilization = min(1, remaining_capacity / weight)\n    return value * utilization\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    score = (value / weight) + np.log(adjusted_value(value, weight, remaining_capacity) + 1)\n    return score",
-          "objective": 0.00418,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * (1 - normalized_weight)) * (value / weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00247,
           "other_inf": null
      },
      {
-          "algorithm": "The algorithm prioritizes items based on a score that combines the value-to-weight ratio, the remaining capacity, and a penalty for heavier items to avoid prematurely filling the knapsack.",
-          "code": "import numpy as np\n\ndef calculate_penalty(weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    return 1 / (weight + 1)\n\ndef score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_to_weight_ratio = value / weight\n    penalty = calculate_penalty(weight, remaining_capacity)\n    score = value_to_weight_ratio * penalty\n    return score",
-          "objective": 0.01695,
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * (1 - normalized_weight)) * np.exp(remaining_capacity - weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00389,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    utilization = remaining_capacity - weight\n    dynamic_ratio = (value / weight) * (1 + (utilization / remaining_capacity))\n    return float(dynamic_ratio)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00499,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    return (value / weight) * (remaining_capacity - weight + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00528,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio * np.log(value + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.006,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    ratio = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return ratio * capacity_ratio * np.sqrt(value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00658,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * (1 - normalized_weight)) * remaining_capacity\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.00835,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * (1 - normalized_weight)) * np.exp(normalized_value)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.01067,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_score(weight, value, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / remaining_capacity\n    normalized_weight = weight / remaining_capacity\n    return (normalized_value * np.exp(1 - normalized_weight)) * 1000\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_score(weight, value, remaining_capacity)\n    return score",
+          "objective": 0.01178,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    value_density = value / weight\n    return value_density * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
+          "objective": 0.01975,
           "other_inf": null
      }
 ]

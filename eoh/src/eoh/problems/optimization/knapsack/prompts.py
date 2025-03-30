@@ -25,7 +25,7 @@ class GetPrompts:
         self.prompt_inout_inf = (
             "'weight' and 'value' represent the weight and value of an item, respectively, while "
             "'remaining_capacity' is the current available capacity in the knapsack. The output, "
-            "'score', must be a single numeric value (specifically a float) indicating the desirability "
+            "must be a single numeric value (specifically a float) indicating the desirability "
             "of selecting that item."
         )
 
@@ -37,6 +37,21 @@ class GetPrompts:
             "float value (for example, -1e9). The function must not return any callable or function object, "
             "and all helper functions (if any) should be placed immediately above the 'score' function definition. "
             "Ensure that your function returns a float number and that all parentheses are properly closed."
+            """Sample code: 
+import numpy as np
+
+def calculate_adjusted_score(value, weight, remaining_capacity):
+    if weight > remaining_capacity:
+        return -1e9
+    adjustment = np.log(remaining_capacity + 1)
+    base_score = (value / weight) ** 2
+    return np.exp(base_score) * adjustment
+
+
+def score(weight, value, remaining_capacity):
+    score = calculate_adjusted_score(value, weight, remaining_capacity)
+    return score
+"""
         )
 
     def get_task(self):
