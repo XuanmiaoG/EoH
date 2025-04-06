@@ -1,98 +1,26 @@
 [
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_enhanced_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return value_density * np.log(value + 1) * (1 + capacity_ratio)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_enhanced_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00084,
+          "code": "import numpy as np\n\ndef calculate_total_distance(node, unvisited_nodes, distance_matrix):\n    total_distance = 0\n    for other_node in unvisited_nodes:\n        total_distance += distance_matrix[node][other_node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    min_distance = float('inf')\n    next_node_index = unvisited_nodes[0]\n    \n    for node in unvisited_nodes:\n        total_distance = calculate_total_distance(node, unvisited_nodes, distance_matrix)\n        if total_distance < min_distance:\n            min_distance = total_distance\n            next_node_index = node\n            \n    return next_node_index",
+          "objective": 1.33209,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_tanh_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return value_density * np.tanh(capacity_ratio) * (value + remaining_capacity)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_tanh_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00097,
+          "code": "import numpy as np\n\ndef compute_total_distance_for_node(node, distance_matrix, unvisited_nodes):\n    total_distance = 0\n    for other_node in range(len(distance_matrix)):\n        if other_node not in unvisited_nodes:\n            total_distance += distance_matrix[other_node][node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    total_distances = []\n    for node in unvisited_nodes:\n        total_distance = compute_total_distance_for_node(node, distance_matrix, unvisited_nodes)\n        total_distances.append((total_distance, node))\n        \n    total_distances.sort()\n    next_node_index = total_distances[0][1]\n    return next_node_index",
+          "objective": 1.44825,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00107,
+          "code": "import numpy as np\n\ndef calculate_total_cost(candidate_node, distance_matrix, agents):\n    total_cost = 0\n    for agent in agents:\n        total_cost += min(distance_matrix[agent][candidate_node] for agent in agents)\n    return total_cost\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    costs = []\n    for node in unvisited_nodes:\n        cost = calculate_total_cost(node, distance_matrix, range(len(distance_matrix)))\n        costs.append((cost, node))\n        \n    costs.sort()\n    next_node_index = costs[0][1]\n    return next_node_index",
+          "objective": 1.80275,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_exponential_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_factor = np.exp(-weight / remaining_capacity)\n    return (value_density ** 3) * capacity_factor * (value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_exponential_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00112,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_utilization = weight / (remaining_capacity + 1e-9)\n    return (value_ratio ** 1.5) * np.exp(-capacity_utilization) * (value ** 0.8)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00118,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_logarithmic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (value + weight)\n    capacity_ratio = remaining_capacity / (remaining_capacity + weight)\n    return np.log(1 + value_ratio * capacity_ratio) * (value + remaining_capacity)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logarithmic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00123,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_logistic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_fraction = weight / remaining_capacity\n    return value_density * (1 / (1 + np.exp(-capacity_fraction)))\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logistic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00124,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_logarithmic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_factor = np.log(1 + remaining_capacity / weight)\n    return (value_density ** 2) * capacity_factor * np.sqrt(value)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logarithmic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00125,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_utilization = (remaining_capacity - weight) / remaining_capacity\n    return value_density * np.sqrt(value) * (1 + capacity_utilization)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00126,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    ratio = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return ratio * capacity_ratio * np.log(value + 1)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00154,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_power_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_ratio = remaining_capacity / (weight + 1e-9)\n    return (value_ratio ** 2) * (capacity_ratio ** 0.5) * (value + remaining_capacity)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_power_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00168,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_hybrid_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_ratio = (remaining_capacity - weight) / (remaining_capacity + 1e-9)\n    return (value_ratio ** 2) * np.sqrt(capacity_ratio) * (value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_hybrid_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00184,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_ratio = remaining_capacity / (weight + 1e-9)\n    return value_ratio * np.log1p(capacity_ratio) * (value + weight)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00193,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_exponential_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = weight / remaining_capacity\n    return value_density * np.exp(-capacity_ratio) * (value * remaining_capacity)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_exponential_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00207,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_exponential_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_ratio = value / (weight + 1e-9)\n    capacity_ratio = (remaining_capacity - weight) / (remaining_capacity + 1e-9)\n    return np.exp(value_ratio) * (1 + capacity_ratio) * (value + remaining_capacity)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_exponential_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00221,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```\n",
-          "code": "import numpy as np\n\ndef calculate_logistic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = weight / remaining_capacity\n    return value_density * (1 / (1 + np.exp(-10 * (1 - capacity_ratio))))\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logistic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00253,
+          "code": "import numpy as np\n\ndef calculate_cost_difference(current_node, candidate_node, distance_matrix):\n    total_cost_difference = 0\n    for node in range(len(distance_matrix)):\n        if node == current_node or node == candidate_node:\n            continue\n        current_cost = distance_matrix[node][current_node]\n        candidate_cost = distance_matrix[node][candidate_node]\n        total_cost_difference += candidate_cost - current_cost\n    return total_cost_difference\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    cost_differences = []\n    for node in unvisited_nodes:\n        cost_difference = calculate_cost_difference(current_node, node, distance_matrix)\n        cost_differences.append((cost_difference, node))\n        \n    cost_differences.sort()\n    next_node_index = cost_differences[0][1]\n    return next_node_index",
+          "objective": 1.84144,
           "other_inf": null
      }
 ]

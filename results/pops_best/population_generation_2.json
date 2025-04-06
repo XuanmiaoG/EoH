@@ -1,6 +1,6 @@
 {
      "algorithm": "```",
-     "code": "import numpy as np\n\ndef calculate_enhanced_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return value_density * np.log(value + 1) * (1 + capacity_ratio)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_enhanced_score(value, weight, remaining_capacity)\n    return score",
-     "objective": 0.00084,
+     "code": "import numpy as np\n\ndef calculate_total_distance(node, unvisited_nodes, distance_matrix):\n    total_distance = 0\n    for other_node in unvisited_nodes:\n        total_distance += distance_matrix[node][other_node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    min_distance = float('inf')\n    next_node_index = unvisited_nodes[0]\n    \n    for node in unvisited_nodes:\n        total_distance = calculate_total_distance(node, unvisited_nodes, distance_matrix)\n        if total_distance < min_distance:\n            min_distance = total_distance\n            next_node_index = node\n            \n    return next_node_index",
+     "objective": 1.33209,
      "other_inf": null
 }

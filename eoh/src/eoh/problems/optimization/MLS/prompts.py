@@ -37,7 +37,7 @@ class GetPrompts:
             "distance between positions i and j. The function should select a node that strategically "
             "minimizes the overall distance cost in the facility location problem. Any helper functions "
             "should be placed immediately above the 'select_next_node' function definition."
-            """
+            """ remember you shoould define the return value next_node_index!!!
 Sample code:
 
 import numpy as np
@@ -58,18 +58,6 @@ def calculate_benefit(current_node, candidate_node, unvisited_nodes, distance_ma
     return total_benefit
 
 def select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):
-    '''
-    Selects the next node to place a facility in the multi-facility location problem.
-    
-    Args:
-    current_node: Index of the current node
-    destination_node: Index of the destination node (can be ignored)
-    unvisited_nodes: Array of indices of unvisited nodes
-    distance_matrix: Matrix of distances between all nodes
-    
-    Returns:
-    int: Index of the next node to visit
-    '''
     if len(unvisited_nodes) == 0:
         return destination_node
         
