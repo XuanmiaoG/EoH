@@ -169,44 +169,27 @@ class MLS:
         return np.mean(all_costs) if len(all_costs) > 0 else None
 
     def evaluate(self, code_string):
-        """
-        Evaluate the user-provided code string as a python module,
-        searching for the function 'select_next_node(...).'
-        Returns the average route cost across self.instance_data if successful,
-        or None if an error occurs.
-        """
-        try:
-            # Safely create a new module
-            heuristic_module = types.ModuleType("heuristic_module")
-            exec(code_string, heuristic_module.__dict__)
+            """
+            Evaluate the user-provided code string as a python module,
+            searching for the function 'select_next_node(...).'
+            Returns the average route cost across self.instance_data if successful,
+            or None if an error occurs.
+            """
+            try:
+                # Print the code string for debugging
+                print("Debug - Code String:")
+                print(code_string)
 
-            # Now attempt to run the TSP-like routine
-            avg_cost = self.simple_greedy_tour(heuristic_module)
-            return avg_cost
-        except Exception as e:
-            # If anything goes wrong, return None
-            print("Error in evaluate:", e)
-            return None
+                # Safely create a new module
+                heuristic_module = types.ModuleType("heuristic_module")
+                exec(code_string, heuristic_module.__dict__)
+                
+                # Now attempt to run the TSP-like routine
+                avg_cost = self.simple_greedy_tour(heuristic_module)
+                return avg_cost
+            except Exception as e:
+                # If anything goes wrong, return None
+                print("Error in evaluate:", e)
+                return None
 
 
-if __name__ == "__main__":
-    # Example usage
-    tsp_const = MSL()
-
-    # Suppose we have some user code that tries to implement `select_next_node`.
-    # For demonstration, here is a minimal code snippet that picks the closest unvisited:
-    example_heuristic = r"""
-def select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):
-    # trivial approach: pick whichever node among unvisited_nodes has min distance from current_node
-    if len(unvisited_nodes) == 0:
-        return destination_node
-    dist_vals = [(distance_matrix[current_node][u], u) for u in unvisited_nodes]
-    dist_vals.sort(key=lambda x: x[0])
-    return dist_vals[0][1]
-"""
-
-    fitness = tsp_const.evaluate(example_heuristic)
-    if fitness is not None:
-        print(f"Average route cost from the example heuristic: {fitness:.4f}")
-    else:
-        print("Heuristic code returned None or an error occurred.")

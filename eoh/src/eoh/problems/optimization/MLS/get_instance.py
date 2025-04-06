@@ -4,10 +4,10 @@ import numpy as np
 class GetData:
     def __init__(
         self,
-        distributions=("uniform", "normal"),
-        n_values=(5, 10),
-        k_values=(1, 2),
-        samples_per_setting=5,
+        distributions=("uniform", "normal", "beta1", "beta2"),
+        n_values=(5, 10, 25),
+        k_values=(1, 2, 3, 4),
+        samples_per_setting=10,
         seed=0,
     ):
         """
@@ -42,6 +42,10 @@ class GetData:
         for dist_name in distributions:
             for n in n_values:
                 for k in k_values:
+                    # Skip cases where k ≥ n (not interesting for facility location)
+                    if k >= n:
+                        continue
+                    
                     # Construct a key in the same style as "Weibull 5k",
                     # but now for facility location:
                     dataset_key = f"{dist_name}_n{n}_k{k}"
@@ -52,42 +56,49 @@ class GetData:
                         # Generate peaks according to dist_name
                         peaks = self.generate_peaks(dist_name=dist_name, n=n)
 
-                        # Example: Assign uniform weights or random weights
-                        # (You can adapt as needed)
-                        weights = np.ones(n, dtype=float)  # e.g. unweighted
-                        # or random in {1,...,5}
-                        # weights = self.rng.integers(1, 6, size=n)
+                        # Assign weights based on n
+                        if n == 5:
+                            weights = np.array([5, 1, 1, 1, 1], dtype=float)
+                        elif n == 10:
+                            weights = np.array([5, 5, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+                        else:
+                            # For n=25 or other values, create a simple pattern
+                            # 20% of agents have weight 5, rest have weight 1
+                            high_weight_count = max(1, int(0.2 * n))
+                            weights = np.ones(n, dtype=float)
+                            weights[:high_weight_count] = 5.0
+                            
+                        # Generate misreports for strategyproofness testing
+                        misreports = self.generate_misreports(peaks)
 
                         instance_data = {
                             "n": n,
                             "k": k,
                             "peaks": peaks,
                             "weights": weights,
-                            # Optionally store other info (e.g. number misreports, etc.)
-                            "misreports_per_agent": 10,  # example placeholder
+                            "misreports": misreports,
                         }
                         self.datasets[dataset_key][instance_name] = instance_data
 
     def generate_peaks(self, dist_name, n):
         """
         Generate n agent peaks in [0,1], according to the requested distribution.
-        Adjust or extend as needed for beta, etc.
         """
         if dist_name == "uniform":
             return self.rng.random(n)  # uniform [0,1]
 
         elif dist_name == "normal":
-            # Example: normal with mean 0.5, std=1; then clipped to [0,1]
-            raw = self.rng.normal(loc=0.5, scale=1.0, size=n)
+            # Normal with mean 0.5, std=1; then clipped to [0,1]
+            raw = self.rng.normal(loc=0.5, scale=0.2, size=n)
             return np.clip(raw, 0.0, 1.0)
 
         elif dist_name == "beta1":
-            # alpha=1, beta=9
+            # alpha=1, beta=9 (skewed to the left)
             raw = self.rng.beta(a=1.0, b=9.0, size=n)
             return raw
 
         elif dist_name == "beta2":
-            # alpha=9, beta=1
+            # alpha=9, beta=1 (skewed to the right)
             raw = self.rng.beta(a=9.0, b=1.0, size=n)
             return raw
 
@@ -95,18 +106,84 @@ class GetData:
             # Default fallback: uniform
             return self.rng.random(n)
 
-    def dummy_lower_bound(self, peaks, weights, k):
+    def generate_misreports(self, peaks):
         """
-        Example placeholder: compute a trivial 'lower bound' for the cost or facility usage.
-        E.g., sum of all weights / k. Adjust to something meaningful if you like.
+        Generate reasonable misreports for each agent to test strategyproofness.
         """
-        total_weight = np.sum(weights)
-        return total_weight / max(k, 1)
+        n = len(peaks)
+        misreports_per_agent = 10
+        misreports = np.zeros((n, misreports_per_agent))
+        
+        for i in range(n):
+            for j in range(misreports_per_agent):
+                strategy = j % 5  # 5 different misreporting strategies
+                
+                if strategy == 0:
+                    # Random misreport in [0,1]
+                    misreports[i, j] = self.rng.random()
+                elif strategy == 1:
+                    # Small deviation from true peak
+                    noise = self.rng.normal(0, 0.05)  # Small Gaussian noise
+                    misreports[i, j] = np.clip(peaks[i] + noise, 0.0, 1.0)
+                elif strategy == 2:
+                    # Move away from true peak (to the right)
+                    shift = self.rng.uniform(0.1, 0.3)
+                    misreports[i, j] = np.clip(peaks[i] + shift, 0.0, 1.0)
+                elif strategy == 3:
+                    # Move away from true peak (to the left)
+                    shift = self.rng.uniform(0.1, 0.3)
+                    misreports[i, j] = np.clip(peaks[i] - shift, 0.0, 1.0)
+                else:
+                    # Extreme report (0 or 1)
+                    misreports[i, j] = 0.0 if self.rng.random() < 0.5 else 1.0
+        
+        return misreports
+
+    def calculate_lower_bound(self, peaks, weights, k):
+        """
+        Calculate a simple lower bound for the weighted social cost.
+        This is based on the best possible facility placement for an equal distribution.
+        """
+        # Sort peaks for easier calculation
+        sorted_peaks = np.sort(peaks)
+        n = len(peaks)
+        
+        # In the best case, facilities are optimally placed to minimize cost
+        # For k=1, the weighted median is optimal
+        if k == 1:
+            # Approximate weighted median
+            cumulative_weights = np.cumsum(weights) / np.sum(weights)
+            median_idx = np.argmin(np.abs(cumulative_weights - 0.5))
+            return np.sum(weights * np.abs(peaks - sorted_peaks[median_idx])) / np.sum(weights)
+        
+        # For k>1, a simple lower bound is to divide agents into k equal groups
+        # and place a facility at the center of each group
+        else:
+            # Divide sorted peaks into k segments
+            segment_size = n // k
+            
+            # Calculate cost assuming perfect division of agents
+            total_cost = 0
+            for i in range(k):
+                start_idx = i * segment_size
+                end_idx = start_idx + segment_size if i < k-1 else n
+                
+                if start_idx < end_idx:
+                    # Place facility at the mean of this segment
+                    segment_peaks = sorted_peaks[start_idx:end_idx]
+                    facility_loc = np.mean(segment_peaks)
+                    
+                    # Calculate cost for this segment
+                    segment_costs = np.abs(segment_peaks - facility_loc)
+                    segment_weights = weights[start_idx:end_idx] if len(weights) == n else np.ones(len(segment_peaks))
+                    
+                    total_cost += np.sum(segment_weights * segment_costs)
+            
+            return total_cost / np.sum(weights)
 
     def dataset_lower_bound(self, instances):
         """
-        Computes the mean of the dummy lower bound over all instances in a dataset.
-        You can adapt this to something more appropriate for facility location if you like.
+        Computes the mean of the lower bound over all instances in a dataset.
         """
         bounds = []
         for instance_name in instances:
@@ -114,35 +191,16 @@ class GetData:
             peaks = data["peaks"]
             weights = data["weights"]
             k = data["k"]
-            bounds.append(self.dummy_lower_bound(peaks, weights, k))
+            bounds.append(self.calculate_lower_bound(peaks, weights, k))
         return np.mean(bounds)
 
     def get_instances(self):
         """
-        Mimics the same final call as in your original bin-packing code:
-        returns (all_datasets, some_summary) where some_summary can be
-        your “lower bound” measure or anything else.
-
-        In the original code, opt_num_bins was the average L1 bound
-        for each dataset. We replicate that style here.
+        Returns (all_datasets, summary_bounds) where summary_bounds provides
+        a lower bound estimate for each dataset configuration.
         """
         summary_bounds = {}
         for dataset_key, instances in self.datasets.items():
-            # e.g. “uniform_n5_k2”
             summary_bounds[dataset_key] = self.dataset_lower_bound(instances)
 
         return self.datasets, summary_bounds
-
-
-# Example usage:
-if __name__ == "__main__":
-    gd = GetData(
-        distributions=["uniform", "normal", "beta1", "beta2"],
-        n_values=[5, 10],
-        k_values=[1, 2],
-        samples_per_setting=3,
-        seed=42,
-    )
-    all_data, summary = gd.get_instances()
-    print("Dataset keys:", list(all_data.keys()))
-    print("Summary lower-bounds:", summary)
