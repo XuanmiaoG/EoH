@@ -1,14 +1,14 @@
 import numpy as np
 
 
-def calculate_best_heuristic(value, weight, remaining_capacity):
+def calculate_enhanced_score(value, weight, remaining_capacity):
     if weight > remaining_capacity:
         return -1e9
-    ratio = value / weight
-    capacity_factor = np.log((remaining_capacity / weight) + 1)
-    return ratio * capacity_factor
+    value_density = value / weight
+    capacity_ratio = remaining_capacity / weight
+    return value_density * np.log(value + 1) * (1 + capacity_ratio)
 
 
 def score(weight, value, remaining_capacity):
-    score = float(calculate_best_heuristic(value, weight, remaining_capacity))
+    score = calculate_enhanced_score(value, weight, remaining_capacity)
     return score

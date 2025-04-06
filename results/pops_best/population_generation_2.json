@@ -1,6 +1,6 @@
 {
      "algorithm": "```",
-     "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-     "objective": 0.00107,
+     "code": "import numpy as np\n\ndef calculate_enhanced_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    value_density = value / weight\n    capacity_ratio = remaining_capacity / weight\n    return value_density * np.log(value + 1) * (1 + capacity_ratio)\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_enhanced_score(value, weight, remaining_capacity)\n    return score",
+     "objective": 0.00084,
      "other_inf": null
 }
