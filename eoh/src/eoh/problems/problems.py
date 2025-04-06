@@ -19,7 +19,11 @@ class Probs():
         elif paras.problem == "knapsack":
             from .optimization.knapsack import run
             self.prob = run.KNAPSACK()
-            print("- Prob "+paras.problem+" loaded ")            
+            print("- Prob "+paras.problem+" loaded ")
+        elif paras.problem == "MLS":
+            from .optimization.MLS import run
+            self.prob = run.MLS()
+            print("- Prob "+paras.problem+" loaded ")             
         else:
             print("problem "+paras.problem+" not found!")
 

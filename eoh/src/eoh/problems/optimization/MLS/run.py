@@ -6,11 +6,10 @@ import sys
 # from func_timeout import func_set_timeout  # if you wish to use timeouts
 
 # Local imports (adjust if needed)
-from prompts import GetPrompts
-from get_instance import GetData
+from .get_instance import GetData
+from .prompts import GetPrompts
 
-
-class MSL:
+class MLS:
     def __init__(self):
 
         # 1) Basic parameters (you can adapt these as necessary)
