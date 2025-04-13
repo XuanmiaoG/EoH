@@ -1,26 +1,26 @@
 [
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_total_distance(node, unvisited_nodes, distance_matrix):\n    total_distance = 0\n    for other_node in unvisited_nodes:\n        total_distance += distance_matrix[node][other_node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    min_distance = float('inf')\n    next_node_index = unvisited_nodes[0]\n    \n    for node in unvisited_nodes:\n        total_distance = calculate_total_distance(node, unvisited_nodes, distance_matrix)\n        if total_distance < min_distance:\n            min_distance = total_distance\n            next_node_index = node\n            \n    return next_node_index",
+          "code": "import numpy as np\n\ndef calculate_weighted_distance(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    weighted_distance = 0\n    for node in unvisited_nodes:\n        if node == current_node or node == candidate_node:\n            continue\n        distance_to_candidate = distance_matrix[node][candidate_node]\n        distance_to_current = distance_matrix[node][current_node]\n        # Include weights; for simplicity, just sum distances\n        weighted_distance += distance_to_candidate - distance_to_current\n    return weighted_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    distances = []\n    for node in unvisited_nodes:\n        weighted_distance = calculate_weighted_distance(current_node, node, unvisited_nodes, distance_matrix)\n        distances.append((weighted_distance, node))\n        \n    distances.sort()\n    next_node_index = distances[0][1]\n    return next_node_index",
           "objective": 1.33209,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef compute_total_distance_for_node(node, distance_matrix, unvisited_nodes):\n    total_distance = 0\n    for other_node in range(len(distance_matrix)):\n        if other_node not in unvisited_nodes:\n            total_distance += distance_matrix[other_node][node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    total_distances = []\n    for node in unvisited_nodes:\n        total_distance = compute_total_distance_for_node(node, distance_matrix, unvisited_nodes)\n        total_distances.append((total_distance, node))\n        \n    total_distances.sort()\n    next_node_index = total_distances[0][1]\n    return next_node_index",
-          "objective": 1.44825,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_total_cost(candidate_node, distance_matrix, agents):\n    total_cost = 0\n    for agent in agents:\n        total_cost += min(distance_matrix[agent][candidate_node] for agent in agents)\n    return total_cost\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    costs = []\n    for node in unvisited_nodes:\n        cost = calculate_total_cost(node, distance_matrix, range(len(distance_matrix)))\n        costs.append((cost, node))\n        \n    costs.sort()\n    next_node_index = costs[0][1]\n    return next_node_index",
-          "objective": 1.80275,
-          "other_inf": null
-     },
-     {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_cost_difference(current_node, candidate_node, distance_matrix):\n    total_cost_difference = 0\n    for node in range(len(distance_matrix)):\n        if node == current_node or node == candidate_node:\n            continue\n        current_cost = distance_matrix[node][current_node]\n        candidate_cost = distance_matrix[node][candidate_node]\n        total_cost_difference += candidate_cost - current_cost\n    return total_cost_difference\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    cost_differences = []\n    for node in unvisited_nodes:\n        cost_difference = calculate_cost_difference(current_node, node, distance_matrix)\n        cost_differences.append((cost_difference, node))\n        \n    cost_differences.sort()\n    next_node_index = cost_differences[0][1]\n    return next_node_index",
+          "code": "import numpy as np\n\ndef calculate_total_distance(candidate_node, agents, distance_matrix):\n    total_distance = 0\n    for agent in agents:\n        total_distance += distance_matrix[agent][candidate_node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    agents = list(range(len(distance_matrix)))  # Assuming all nodes represent agents\n    total_distances = []\n    \n    for node in unvisited_nodes:\n        total_distance = calculate_total_distance(node, agents, distance_matrix)\n        total_distances.append((total_distance, node))\n    \n    total_distances.sort()\n    next_node_index = total_distances[0][1]\n    return next_node_index",
           "objective": 1.84144,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_cost_reduction(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    total_cost_reduction = 0\n    for node in unvisited_nodes:\n        if node == current_node or node == candidate_node:\n            continue\n        current_distance = distance_matrix[node][current_node]\n        new_distance = distance_matrix[node][candidate_node]\n        cost_reduction = current_distance - new_distance\n        total_cost_reduction += max(0, cost_reduction)\n    return total_cost_reduction\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    cost_reductions = []\n    for node in unvisited_nodes:\n        cost_reduction = calculate_cost_reduction(current_node, node, unvisited_nodes, distance_matrix)\n        cost_reductions.append((cost_reduction, node))\n        \n    cost_reductions.sort(reverse=True)\n    next_node_index = cost_reductions[0][1]\n    return next_node_index",
+          "objective": 1.90991,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "import numpy as np\n\ndef calculate_benefit(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    total_benefit = 0\n    for node in range(len(distance_matrix)):\n        if node == current_node or node == candidate_node:\n            continue\n        current_dist = distance_matrix[node][current_node]\n        candidate_dist = distance_matrix[node][candidate_node]\n        benefit = current_dist - candidate_dist\n        total_benefit += max(0, benefit)\n    return total_benefit\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    benefits = []\n    for node in unvisited_nodes:\n        benefit = calculate_benefit(current_node, node, unvisited_nodes, distance_matrix)\n        benefits.append((benefit, node))\n        \n    benefits.sort(reverse=True)\n    next_node_index = benefits[0][1]\n    return next_node_index",
+          "objective": 2.02699,
           "other_inf": null
      }
 ]

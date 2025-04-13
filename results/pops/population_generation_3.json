@@ -1,26 +1,26 @@
 [
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_dynamic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    capacity_ratio = remaining_capacity / weight\n    return value * capacity_ratio\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_dynamic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00107,
+          "code": "import numpy as np\n\ndef calculate_weighted_distance(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    weighted_distance = 0\n    for node in unvisited_nodes:\n        if node == current_node or node == candidate_node:\n            continue\n        distance_to_candidate = distance_matrix[node][candidate_node]\n        distance_to_current = distance_matrix[node][current_node]\n        # Include weights; for simplicity, just sum distances\n        weighted_distance += distance_to_candidate - distance_to_current\n    return weighted_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    distances = []\n    for node in unvisited_nodes:\n        weighted_distance = calculate_weighted_distance(current_node, node, unvisited_nodes, distance_matrix)\n        distances.append((weighted_distance, node))\n        \n    distances.sort()\n    next_node_index = distances[0][1]\n    return next_node_index",
+          "objective": 1.33209,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_logistic_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / weight\n    capacity_ratio = remaining_capacity / (weight + 1)\n    return normalized_value * (1 / (1 + np.exp(-capacity_ratio)))\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_logistic_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00136,
+          "code": "import numpy as np\n\ndef calculate_cost(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    total_cost = 0\n    for node in range(len(distance_matrix)):\n        if node in unvisited_nodes:\n            continue\n        current_dist = min(distance_matrix[node][n] for n in unvisited_nodes)\n        candidate_dist = distance_matrix[node][candidate_node]\n        cost = candidate_dist - current_dist\n        total_cost += max(0, cost)\n    return total_cost\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    costs = []\n    for node in unvisited_nodes:\n        cost = calculate_cost(current_node, node, unvisited_nodes, distance_matrix)\n        costs.append((cost, node))\n        \n    costs.sort()\n    next_node_index = costs[0][1]\n    return next_node_index",
+          "objective": 1.44825,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_tanh_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    ratio = value / weight\n    tanh_factor = np.tanh(remaining_capacity / weight)\n    return ratio * tanh_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_tanh_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.0027,
+          "code": "import numpy as np\n\ndef calculate_distance_reduction(candidate_node, unvisited_nodes, distance_matrix):\n    total_reduction = 0\n    for node in range(len(distance_matrix)):\n        if node in unvisited_nodes:\n            continue\n        current_distance = min(distance_matrix[node][n] for n in unvisited_nodes)\n        new_distance = distance_matrix[node][candidate_node]\n        reduction = current_distance - new_distance\n        total_reduction += max(0, reduction)\n    return total_reduction\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n\n    reductions = []\n    for node in unvisited_nodes:\n        reduction = calculate_distance_reduction(node, unvisited_nodes, distance_matrix)\n        reductions.append((reduction, node))\n        \n    reductions.sort(reverse=True)\n    next_node_index = reductions[0][1]\n    return next_node_index",
+          "objective": 1.80275,
           "other_inf": null
      },
      {
           "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_power_score(value, weight, remaining_capacity):\n    if weight > remaining_capacity:\n        return -1e9\n    normalized_value = value / weight\n    capacity_factor = (remaining_capacity - weight + 1) ** 0.5\n    return normalized_value * capacity_factor\n\ndef score(weight, value, remaining_capacity):\n    score = calculate_power_score(value, weight, remaining_capacity)\n    return score",
-          "objective": 0.00275,
+          "code": "import numpy as np\n\ndef calculate_total_distance(candidate_node, agents, distance_matrix):\n    total_distance = 0\n    for agent in agents:\n        total_distance += distance_matrix[agent][candidate_node]\n    return total_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    agents = list(range(len(distance_matrix)))  # Assuming all nodes represent agents\n    total_distances = []\n    \n    for node in unvisited_nodes:\n        total_distance = calculate_total_distance(node, agents, distance_matrix)\n        total_distances.append((total_distance, node))\n    \n    total_distances.sort()\n    next_node_index = total_distances[0][1]\n    return next_node_index",
+          "objective": 1.84144,
           "other_inf": null
      }
 ]
