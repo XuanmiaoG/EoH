@@ -4,10 +4,9 @@ import warnings
 import sys
 
 # 从 get_instance 模块中加载所需组件
-from .get_instance import (
+from get_instance import (
     GetData,
     calc_fitness,
-    place_facilities_quantiles,  # 如有需要直接调用
 )
 
 
@@ -17,7 +16,7 @@ class MLS_Test:
 
     流程：
       1. 通过 GetData 加载数据时只使用 test 数据；
-      2. evaluateHeuristic 方法要求用户模块提供 place_facilities(peaks, weights, k) 函数，
+      2. evaluateHeuristic 方法要求候选模块提供 place_facilities(peaks, weights, k) 函数，
          依次对所有实例计算 fitness（加权社会成本 + 罚分）；
       3. evaluate 方法接收用户提供的代码字符串，
          将其动态加载后调用 evaluateHeuristic 得到平均 fitness（越低越好）。
@@ -30,14 +29,13 @@ class MLS_Test:
         # 只取 test 数据
         _, test_data = getdata.get_instances()
         self.instances = test_data
-        self.prompts = GetPrompts()
 
     def evaluateHeuristic(self, alg) -> float:
         """
-        对所有 test 实例使用用户提供的 place_facilities(...) 函数进行评估，
+        对所有 test 实例使用候选模块中提供的 place_facilities(...) 函数进行评估，
         并返回所有样本 fitness（平均值）。
         """
-        # 尝试从候选模块中获取 place_facilities 函数
+        # 从候选模块中获取 place_facilities 函数
         place_func = getattr(alg, "place_facilities", None)
         if place_func is None:
             raise ValueError(
