@@ -20,6 +20,9 @@ paras.set_paras(
     llm_api_endpoint="api.deerapi.com",  # set your LLM endpoint
     llm_api_key="sk-a3d88j2Z7VzOQOTYZCr8ZnkuVXFOySxfDyc6p28sIuPgSkJ4",  # set your key
     llm_model="gpt-4o-mini",
+    # llm_api_endpoint="api.deepseek.com",  # set your LLM endpoint
+    # llm_api_key="sk-35e4e0944b4b495e9bfb670d7198d83b",  # set your key
+    # llm_model="deepseek-chat",
     ec_pop_size=4,  # number of samples in each population
     ec_n_pop=4,  # number of populations
     exp_n_proc=4,  # multi-core parallel

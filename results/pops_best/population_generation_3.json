@@ -1,6 +1,6 @@
 {
-     "algorithm": "```",
-     "code": "import numpy as np\n\ndef calculate_weighted_distance(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    weighted_distance = 0\n    for node in unvisited_nodes:\n        if node == current_node or node == candidate_node:\n            continue\n        distance_to_candidate = distance_matrix[node][candidate_node]\n        distance_to_current = distance_matrix[node][current_node]\n        # Include weights; for simplicity, just sum distances\n        weighted_distance += distance_to_candidate - distance_to_current\n    return weighted_distance\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    distances = []\n    for node in unvisited_nodes:\n        weighted_distance = calculate_weighted_distance(current_node, node, unvisited_nodes, distance_matrix)\n        distances.append((weighted_distance, node))\n        \n    distances.sort()\n    next_node_index = distances[0][1]\n    return next_node_index",
-     "objective": 1.33209,
+     "algorithm": "Use a modified progressive approach to place facilities based on weighted quantiles adjusted for cumulative weights.",
+     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a modified progressive approach to place facilities based on weighted quantiles adjusted for cumulative weights.}\n    \n    sorted_peaks = np.sort(peaks)\n    total_weight = np.sum(weights)\n    cumulative_weight = np.cumsum(weights) / total_weight\n\n    facilities_positions = []\n    \n    for i in range(k):\n        target = (i + 0.5) / k  # Target cumulative weight for facility (midpoint of each section)\n        idx = np.searchsorted(cumulative_weight, target)\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+     "objective": 1.8783,
      "other_inf": null
 }

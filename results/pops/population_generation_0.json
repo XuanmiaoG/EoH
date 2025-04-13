@@ -1,8 +1,8 @@
 [
      {
-          "algorithm": "```",
-          "code": "import numpy as np\n\ndef calculate_benefit(current_node, candidate_node, unvisited_nodes, distance_matrix):\n    total_benefit = 0\n    for node in range(len(distance_matrix)):\n        if node == current_node or node == candidate_node:\n            continue\n        current_dist = distance_matrix[node][current_node]\n        candidate_dist = distance_matrix[node][candidate_node]\n        benefit = current_dist - candidate_dist\n        total_benefit += max(0, benefit)\n    return total_benefit\n\ndef select_next_node(current_node, destination_node, unvisited_nodes, distance_matrix):\n    if len(unvisited_nodes) == 0:\n        return destination_node\n        \n    benefits = []\n    for node in unvisited_nodes:\n        benefit = calculate_benefit(current_node, node, unvisited_nodes, distance_matrix)\n        benefits.append((benefit, node))\n        \n    benefits.sort(reverse=True)\n    next_node_index = benefits[0][1]\n    return next_node_index",
-          "objective": 2.02699,
+          "algorithm": "For k facilities, place them at the k distinct quantiles of the sorted peaks.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {For k facilities, place them at the k distinct quantiles of the sorted peaks.}\n    \n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+          "objective": 2.12508,
           "other_inf": null
      }
 ]
