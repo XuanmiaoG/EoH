@@ -1,26 +1,26 @@
 [
      {
-          "algorithm": "Use a clustering approach by averaging peaks in k equally sized segments and placing facilities at the center of each segment.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a clustering approach by averaging peaks in k equally sized segments and placing facilities at the center of each segment.}\n    \n    sorted_peaks = np.sort(peaks)\n    num_peaks = len(sorted_peaks)\n    facilities_positions = []\n    \n    segment_size = num_peaks // k\n    \n    for i in range(k):\n        if i == k - 1:  # Last segment may include leftovers\n            segment = sorted_peaks[i * segment_size:]\n        else:\n            segment = sorted_peaks[i * segment_size:(i + 1) * segment_size]\n        \n        facilities_positions.append(np.mean(segment))\n    \n    return facilities_positions",
-          "objective": 1.92439,
+          "algorithm": "Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].}\n    \n    candidate_positions = np.linspace(0, 1, 101)\n    facilities_positions = []\n    \n    for position in candidate_positions:\n        cost = np.sum(weights * np.abs(peaks - position))\n        facilities_positions.append((position, cost))\n    \n    # Sort by cost\n    facilities_positions.sort(key=lambda x: x[1])\n    \n    # Select the top k positions with the lowest cost\n    best_positions = [fac_position[0] for fac_position in facilities_positions[:k]]\n    \n    return facilities_positions",
+          "objective": 0.07703,
           "other_inf": null
      },
      {
-          "algorithm": "Use a progressive approach to place facilities at equal intervals based on the weighted distribution of peaks.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a progressive approach to place facilities at equal intervals based on the weighted distribution of peaks.}\n    \n    sorted_peaks = np.sort(peaks)\n    total_weight = np.sum(weights)\n    cumulative_weight = np.cumsum(weights) / total_weight\n    \n    facilities_positions = []\n    \n    for i in range(k):\n        target = (i + 1) / (k + 1)  # Target cumulative weight for facility\n        idx = np.searchsorted(cumulative_weight, target)\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+          "algorithm": "Implementing a 'Best Quantile Rule' by placing facilities at equally spaced quantiles of the weighted peaks.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Quantile Rule' by placing facilities at equally spaced quantiles of the weighted peaks.}\n    \n    sorted_indices = np.argsort(peaks)\n    sorted_peaks = peaks[sorted_indices]\n    sorted_weights = weights[sorted_indices]\n    \n    cumulative_weights = np.cumsum(sorted_weights)\n    total_weight = cumulative_weights[-1]\n    \n    facilities_positions = []\n    for i in range(k):\n        target_weight = (i + 1) * total_weight / (k + 1)\n        quantile_index = np.searchsorted(cumulative_weights, target_weight)\n        facilities_positions.append(sorted_peaks[quantile_index])\n    \n    return facilities_positions",
           "objective": 2.09543,
           "other_inf": null
      },
      {
-          "algorithm": "For k facilities, place them at the k distinct quantiles of the sorted peaks.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {For k facilities, place them at the k distinct quantiles of the sorted peaks.}\n    \n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+          "algorithm": "Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.}\n\n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
           "objective": 2.12508,
           "other_inf": null
      },
      {
-          "algorithm": "Implement a modified approach where facilities are placed based on the weighted average of peaks, adjusted by intervals.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implement a modified approach where facilities are placed based on the weighted average of peaks, adjusted by intervals.}\n    \n    sorted_peaks = np.sort(peaks)\n    total_weight = np.sum(weights)\n    \n    # Calculate weighted averages to find centralized positions for facilities\n    weighted_peaks = sorted_peaks * weights / total_weight\n    cumulative_weighted_peaks = np.cumsum(weighted_peaks)\n    \n    facilities_positions = []\n    \n    for i in range(k):\n        target_position = (i + 1) / (k + 1) * cumulative_weighted_peaks[-1]  # Target position based on weighted distribution\n        idx = np.searchsorted(cumulative_weighted_peaks, target_position)\n        facilities_positions.append(sorted_peaks[min(idx, len(sorted_peaks) - 1)])  # Ensure index is within bounds\n    \n    return facilities_positions",
-          "objective": 2.72412,
+          "algorithm": "Implementing a 'Best Dictator Rule' by placing facilities at the peaks of the top k weighted agents.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Dictator Rule' by placing facilities at the peaks of the top k weighted agents.}\n    \n    sorted_indices = np.argsort(weights)[-k:]  # Get indices of the top k weighted agents\n    facilities_positions = peaks[sorted_indices]  # Assign facility positions to their peaks\n    \n    return facilities_positions",
+          "objective": 2.93137,
           "other_inf": null
      }
 ]

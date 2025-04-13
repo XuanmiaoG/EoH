@@ -1,25 +1,25 @@
 [
      {
-          "algorithm": "Use a median-based approach by splitting the peaks into k segments and placing the facilities at the median of each segment.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a median-based approach by splitting the peaks into k segments and placing the facilities at the median of each segment.}\n    \n    sorted_peaks = np.sort(peaks)\n    num_peaks = len(sorted_peaks)\n    facilities_positions = []\n    \n    segment_size = num_peaks // k\n    \n    for i in range(k):\n        if i == k - 1:  # Last segment may include leftovers\n            segment = sorted_peaks[i * segment_size:]\n        else:\n            segment = sorted_peaks[i * segment_size:(i + 1) * segment_size]\n        \n        facilities_positions.append(np.median(segment))\n    \n    return facilities_positions",
-          "objective": 1.88169,
+          "algorithm": "Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].}\n    \n    candidate_positions = np.linspace(0, 1, 101)\n    facilities_positions = []\n    \n    for position in candidate_positions:\n        cost = np.sum(weights * np.abs(peaks - position))\n        facilities_positions.append((position, cost))\n    \n    # Sort by cost\n    facilities_positions.sort(key=lambda x: x[1])\n    \n    # Select the top k positions with the lowest cost\n    best_positions = [fac_position[0] for fac_position in facilities_positions[:k]]\n    \n    return facilities_positions",
+          "objective": 0.07703,
           "other_inf": null
      },
      {
-          "algorithm": "Use a clustering approach by averaging peaks in k equally sized segments and placing facilities at the center of each segment.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a clustering approach by averaging peaks in k equally sized segments and placing facilities at the center of each segment.}\n    \n    sorted_peaks = np.sort(peaks)\n    num_peaks = len(sorted_peaks)\n    facilities_positions = []\n    \n    segment_size = num_peaks // k\n    \n    for i in range(k):\n        if i == k - 1:  # Last segment may include leftovers\n            segment = sorted_peaks[i * segment_size:]\n        else:\n            segment = sorted_peaks[i * segment_size:(i + 1) * segment_size]\n        \n        facilities_positions.append(np.mean(segment))\n    \n    return facilities_positions",
-          "objective": 1.92439,
+          "algorithm": "Implementing a 'Best Clustering Rule' by using k-means clustering on agent peaks to determine facility positions.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Clustering Rule' by using k-means clustering on agent peaks to determine facility positions.}\n    \n    from sklearn.cluster import KMeans\n\n    # Reshape peaks for k-means\n    peaks_reshaped = peaks.reshape(-1, 1)\n    \n    # Apply k-means clustering to find cluster centers\n    kmeans = KMeans(n_clusters=k, random_state=0).fit(peaks_reshaped, sample_weight=weights)\n    \n    # Get the cluster centers as facility positions\n    facilities_positions = kmeans.cluster_centers_.flatten()\n    \n    return facilities_positions",
+          "objective": 1.89321,
           "other_inf": null
      },
      {
-          "algorithm": "Use a progressive approach to place facilities at equal intervals based on the weighted distribution of peaks.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a progressive approach to place facilities at equal intervals based on the weighted distribution of peaks.}\n    \n    sorted_peaks = np.sort(peaks)\n    total_weight = np.sum(weights)\n    cumulative_weight = np.cumsum(weights) / total_weight\n    \n    facilities_positions = []\n    \n    for i in range(k):\n        target = (i + 1) / (k + 1)  # Target cumulative weight for facility\n        idx = np.searchsorted(cumulative_weight, target)\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+          "algorithm": "Implementing a 'Best Quantile Rule' by placing facilities at equally spaced quantiles of the weighted peaks.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Quantile Rule' by placing facilities at equally spaced quantiles of the weighted peaks.}\n    \n    sorted_indices = np.argsort(peaks)\n    sorted_peaks = peaks[sorted_indices]\n    sorted_weights = weights[sorted_indices]\n    \n    cumulative_weights = np.cumsum(sorted_weights)\n    total_weight = cumulative_weights[-1]\n    \n    facilities_positions = []\n    for i in range(k):\n        target_weight = (i + 1) * total_weight / (k + 1)\n        quantile_index = np.searchsorted(cumulative_weights, target_weight)\n        facilities_positions.append(sorted_peaks[quantile_index])\n    \n    return facilities_positions",
           "objective": 2.09543,
           "other_inf": null
      },
      {
-          "algorithm": "For k facilities, place them at the k distinct quantiles of the sorted peaks.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {For k facilities, place them at the k distinct quantiles of the sorted peaks.}\n    \n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
+          "algorithm": "Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.",
+          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.}\n\n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
           "objective": 2.12508,
           "other_inf": null
      }

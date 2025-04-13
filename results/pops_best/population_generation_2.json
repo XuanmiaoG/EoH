@@ -1,6 +1,6 @@
 {
-     "algorithm": "Use a median-based approach by splitting the peaks into k segments and placing the facilities at the median of each segment.",
-     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a median-based approach by splitting the peaks into k segments and placing the facilities at the median of each segment.}\n    \n    sorted_peaks = np.sort(peaks)\n    num_peaks = len(sorted_peaks)\n    facilities_positions = []\n    \n    segment_size = num_peaks // k\n    \n    for i in range(k):\n        if i == k - 1:  # Last segment may include leftovers\n            segment = sorted_peaks[i * segment_size:]\n        else:\n            segment = sorted_peaks[i * segment_size:(i + 1) * segment_size]\n        \n        facilities_positions.append(np.median(segment))\n    \n    return facilities_positions",
-     "objective": 1.88169,
+     "algorithm": "Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].",
+     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].}\n    \n    candidate_positions = np.linspace(0, 1, 101)\n    facilities_positions = []\n    \n    for position in candidate_positions:\n        cost = np.sum(weights * np.abs(peaks - position))\n        facilities_positions.append((position, cost))\n    \n    # Sort by cost\n    facilities_positions.sort(key=lambda x: x[1])\n    \n    # Select the top k positions with the lowest cost\n    best_positions = [fac_position[0] for fac_position in facilities_positions[:k]]\n    \n    return facilities_positions",
+     "objective": 0.07703,
      "other_inf": null
 }

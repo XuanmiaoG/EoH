@@ -1,6 +1,6 @@
 {
-     "algorithm": "Use a modified progressive approach to place facilities based on weighted quantiles adjusted for cumulative weights.",
-     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Use a modified progressive approach to place facilities based on weighted quantiles adjusted for cumulative weights.}\n    \n    sorted_peaks = np.sort(peaks)\n    total_weight = np.sum(weights)\n    cumulative_weight = np.cumsum(weights) / total_weight\n\n    facilities_positions = []\n    \n    for i in range(k):\n        target = (i + 0.5) / k  # Target cumulative weight for facility (midpoint of each section)\n        idx = np.searchsorted(cumulative_weight, target)\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
-     "objective": 1.8783,
+     "algorithm": "Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].",
+     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].}\n    \n    candidate_positions = np.linspace(0, 1, 101)\n    facilities_positions = []\n    \n    for position in candidate_positions:\n        cost = np.sum(weights * np.abs(peaks - position))\n        facilities_positions.append((position, cost))\n    \n    # Sort by cost\n    facilities_positions.sort(key=lambda x: x[1])\n    \n    # Select the top k positions with the lowest cost\n    best_positions = [fac_position[0] for fac_position in facilities_positions[:k]]\n    \n    return facilities_positions",
+     "objective": 0.07703,
      "other_inf": null
 }
