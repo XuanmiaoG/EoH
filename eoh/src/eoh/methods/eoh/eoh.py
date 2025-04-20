@@ -123,7 +123,7 @@ class EOH:
             interface_prob=interface_prob,
             select=self.select,
             n_p=self.exp_n_proc,
-            timeout=self.timeout,
+            timeout=self.timeout + 1000,
             use_numba=self.use_numba,
         )
 

@@ -1,1 +1,14 @@
-[]
+[
+     {
+          "algorithm": "Strategy: pair peaks with weights, sort, and select the best k locations based on weighted medians.",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    {Strategy: pair peaks with weights, sort, and select the best k locations based on weighted medians.}\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    n = len(pairs)\n\n    def wmedian(group):\n        total = sum(w for _, w in group)\n        cum = 0\n        for p, w in group:\n            cum += w\n            if cum >= total / 2:\n                return p\n\n    locations = []\n    segment_size = n // k\n    \n    for i in range(k):\n        start = i * segment_size\n        end = (i + 1) * segment_size if i < k - 1 else n\n        locations.append(wmedian(pairs[start:end]))\n\n    return locations",
+          "objective": 0.08843,
+          "other_inf": null
+     },
+     {
+          "algorithm": "Strategy: pair peaks with weights, sort, and find weighted medians for k facilities using a greedy approach.",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    {Strategy: pair peaks with weights, sort, and find weighted medians for k facilities using a greedy approach.}\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    def wmedian(group):\n        total = sum(w for _, w in group)\n        cum = 0\n        for p, w in group:\n            cum += w\n            if cum >= total / 2:\n                return p\n    locations = []\n    for i in range(k):\n        median_index = (len(pairs) * (i + 1)) // (k + 1) - 1\n        locations.append(wmedian(pairs[:median_index + 1]))\n        pairs = pairs[median_index + 1:]\n    return locations",
+          "objective": 0.20735,
+          "other_inf": null
+     }
+]

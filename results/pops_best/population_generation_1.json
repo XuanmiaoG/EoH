@@ -1,0 +1,6 @@
+{
+     "algorithm": "```",
+     "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    Strategy: pair peaks with weights, use weighted quantiles to determine facility locations dynamically.\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    total_weights = sum(weights)\n    locations = []\n    \n    for i in range(k):\n        target_weight = (i + 1) * total_weights / (k + 1)\n        cumulative_weights = 0\n        for p, w in pairs:\n            cumulative_weights += w\n            if cumulative_weights >= target_weight:\n                locations.append(p)\n                break\n\n    return locations",
+     "objective": 0.0576,
+     "other_inf": null
+}

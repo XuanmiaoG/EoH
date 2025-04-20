@@ -1,1 +1,26 @@
-[]
+[
+     {
+          "algorithm": "```",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    Strategy: pair peaks with weights, use weighted quantiles to determine facility locations dynamically.\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    total_weights = sum(weights)\n    locations = []\n    \n    for i in range(k):\n        target_weight = (i + 1) * total_weights / (k + 1)\n        cumulative_weights = 0\n        for p, w in pairs:\n            cumulative_weights += w\n            if cumulative_weights >= target_weight:\n                locations.append(p)\n                break\n\n    return locations",
+          "objective": 0.0576,
+          "other_inf": null
+     },
+     {
+          "algorithm": "Strategy: pair peaks with weights, calculate cumulative weights, and select k quantiles based on weighted distribution.",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    {Strategy: pair peaks with weights, calculate cumulative weights, and select k quantiles based on weighted distribution.}\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    total_weight = sum(weights)\n    cumulative_weights = [0] * (len(pairs) + 1)\n    \n    for i in range(len(pairs)):\n        cumulative_weights[i + 1] = cumulative_weights[i] + pairs[i][1]\n    \n    locations = []\n    for i in range(1, k + 1):\n        threshold = (i * total_weight) / k\n        for j in range(len(cumulative_weights)):\n            if cumulative_weights[j] >= threshold:\n                locations.append(pairs[j - 1][0])\n                break\n\n    return locations",
+          "objective": 0.06907,
+          "other_inf": null
+     },
+     {
+          "algorithm": "Strategy: pair peaks with weights, sort, and select the best k locations based on weighted medians.",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    {Strategy: pair peaks with weights, sort, and select the best k locations based on weighted medians.}\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    n = len(pairs)\n\n    def wmedian(group):\n        total = sum(w for _, w in group)\n        cum = 0\n        for p, w in group:\n            cum += w\n            if cum >= total / 2:\n                return p\n\n    locations = []\n    segment_size = n // k\n    \n    for i in range(k):\n        start = i * segment_size\n        end = (i + 1) * segment_size if i < k - 1 else n\n        locations.append(wmedian(pairs[start:end]))\n\n    return locations",
+          "objective": 0.08843,
+          "other_inf": null
+     },
+     {
+          "algorithm": "```",
+          "code": "def get_locations(peaks, weights, k):\n    \"\"\"\n    Strategy: pair peaks with weights, find the overall weighted median, and then create k regions based on it.\n    \"\"\"\n    pairs = sorted(zip(peaks, weights))\n    n = len(pairs)\n    \n    def wmedian(group):\n        total = sum(w for _, w in group)\n        cum = 0\n        for p, w in group:\n            cum += w\n            if cum >= total / 2:\n                return p\n    \n    overall_median = wmedian(pairs)\n    locations = [overall_median] * k\n    \n    return locations",
+          "objective": 0.10094,
+          "other_inf": null
+     }
+]

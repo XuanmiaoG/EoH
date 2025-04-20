@@ -22,7 +22,7 @@ class MLS:
         train, test = gd.get_instances()
         self.instances = {}
         self.instances.update(train)
-        self.instances.update(test)
+        #self.instances.update(test)
 
         try:
             self.prompts = GetPrompts()
