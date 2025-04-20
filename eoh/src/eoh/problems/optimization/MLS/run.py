@@ -3,73 +3,85 @@ import types
 import warnings
 import sys
 
-# We import the same modules from get_instance:
+# "get_instance.py" presumably defines:
+#     - GetData
+#     - calc_fitness( peaks, misreports, weights, place_func, k, epsilon=0.01 )
+#       which now requires a 'k' parameter.
+#     - place_facilities_quantiles (optional baseline)
 from .get_instance import (
     GetData,
     calc_fitness,
-    place_facilities_quantiles,  # optional if you want direct usage
+    place_facilities_quantiles,  # optional
 )
-from .prompts import GetPrompts  # if you have a prompts.py file
+
+from .prompts import GetPrompts
 
 
 class MLS:
     """
-    A class analogous to your knapsack 'evaluate' snippet,
-    but for multi-facility location. We'll load data from GetData,
-    then define an evaluate(...) method that expects a user-defined
-    place_facilities(...) function, measure the fitness, and return it.
+    Multi-Facility Location Mechanism Design 'Runner'.
+
+    Loads train/test data from GetData, then provides evaluate(...) to measure how well
+    a user-defined 'get_locations(...)' function performs.  The evaluation is the average
+    'fitness', i.e., sum of (weighted) social cost + any strategyproofness penalty,
+    following the paper's approach.
+
+    Key notes:
+      - Single-peaked preferences on [0,1].
+      - We pass 'k' to calc_fitness(...) if it requires a facility count.
+      - The user code must define `get_locations(samples) -> [locations]`.
+      - By default, we assume two facilities (k=2), or you can adjust it as needed.
     """
 
-    def __init__(self, epsilon=0.01, k=2):
+    def __init__(self, k=2, epsilon=0.01):
         """
-        We load train/test data, store them in self.instances, and keep
-        an epsilon threshold for strategy-proofness checking. Also store k if you want
-        a default # of facilities.
+        Initialize the runner. We store 'k' (number of facilities) and 'epsilon'
+        (the strategyproofness threshold).
         """
-        self.epsilon = epsilon
         self.k = k
+        self.epsilon = epsilon
+
+        # Load data from get_instance.py
         getdata = GetData()
         train_data, test_data = getdata.get_instances()
 
-        # Merge or keep them separate
+        # Merge train+test
         self.instances = {}
         self.instances.update(train_data)
         self.instances.update(test_data)
 
-        self.prompts = GetPrompts()
+        # Load prompt info if needed
+        try:
+            self.prompts = GetPrompts()
+        except Exception:
+            self.prompts = None
 
     def evaluateHeuristic(self, alg) -> float:
         """
-        Evaluate the user-supplied place_facilities(...) code on all loaded instances.
+        Evaluate a user-supplied mechanism on all loaded samples.
 
-        alg must define:
-          def place_facilities(peaks, weights, k):
-              # returns an array of length k
-        We'll compute the average fitness across all samples in self.instances.
+        The mechanism 'alg' must define `get_locations(samples)`.
+        We'll compute the average fitness across all data.
         """
-        place_func = getattr(alg, "place_facilities", None)
+        place_func = getattr(alg, "get_locations", None)
         if place_func is None:
             raise ValueError(
-                "Candidate module does not define a 'place_facilities(peaks,weights,k)' function."
+                "No 'get_locations(samples)' function found in the user code."
             )
 
         total_fitness = 0.0
         total_samples = 0
 
         for key, val in self.instances.items():
-            if 'peaks' not in val:
+            if "peaks" not in val:
                 continue
-            peaks_arr = val['peaks']  # shape (num_samples, n)
-            misr_arr = val.get('misreports', None)
-            weights_info = val.get('weights', None)
 
-            # If the instance has 'k' stored, you can override self.k
-            #  k_local = val['k'] if 'k' in val else self.k
-            k_local = self.k
+            peaks_arr = val["peaks"]
+            misr_arr = val.get("misreports", None)
+            weights_info = val.get("weights", None)
 
-            # Basic shape checks:
             if len(peaks_arr.shape) != 2:
-                print(f"Warning: 'peaks' shape not 2D for {key}")
+                warnings.warn(f"'peaks' for {key} is not 2D. Skipping.")
                 continue
 
             num_samples, n_agents = peaks_arr.shape
@@ -77,59 +89,60 @@ class MLS:
             for i in range(num_samples):
                 peaks_i = peaks_arr[i]
 
-                # If weights are shape (n_agents,)
-                # or if shape (num_samples, n_agents), take row i
                 if weights_info is not None:
                     if len(weights_info.shape) == 1:
                         weights_i = weights_info
                     elif len(weights_info.shape) == 2:
                         weights_i = weights_info[i]
                     else:
-                        print(f"Warning: unexpected weights shape {weights_info.shape} in {key}")
+                        warnings.warn(
+                            f"Unexpected 'weights' shape {weights_info.shape} in {key}."
+                        )
                         weights_i = np.ones(n_agents, dtype=float)
                 else:
                     weights_i = np.ones(n_agents, dtype=float)
 
-                # If misreports is shape (num_samples, n_agents, M)
                 misreports_i = None
                 if misr_arr is not None and len(misr_arr.shape) == 3:
-                    if misr_arr.shape[0] == num_samples and misr_arr.shape[1] == n_agents:
+                    if (
+                        misr_arr.shape[0] == num_samples
+                        and misr_arr.shape[1] == n_agents
+                    ):
                         misreports_i = misr_arr[i]
                     else:
-                        print(f"Warning: misreports shape mismatch {misr_arr.shape} in {key}")
+                        warnings.warn(
+                            f"misreports shape mismatch {misr_arr.shape} for {key}, skipping misreports."
+                        )
 
+                # Pass k=self.k explicitly to calc_fitness so it won't complain
                 fitness_i = calc_fitness(
-                    peaks_i, misreports_i, weights_i,
+                    peaks_i,
+                    misreports_i,
+                    weights_i,
                     place_func,
-                    k_local,
-                    epsilon=self.epsilon
+                    k=self.k,
+                    epsilon=self.epsilon,
                 )
                 total_fitness += fitness_i
                 total_samples += 1
 
         if total_samples == 0:
-            print("Warning: no valid samples found. Returning 9999.")
+            warnings.warn("No valid samples found. Returning fitness=9999.")
             return 9999.0
 
         return total_fitness / total_samples
 
-    def evaluate(self, code_string):
+    def evaluate(self, code_string: str) -> float:
         """
-        This is analogous to the knapsack's evaluate(...) method.
-        We expect code_string to define a function:
-
-            def place_facilities(peaks, weights, k):
-                ...
-                return np.array([...])  # length k
-
-        We'll parse that code, call evaluateHeuristic(...), and return a single float fitness.
-        Lower is better => 0 means no cost/penalty, etc.
+        Evaluate a user-supplied code snippet that defines 'get_locations(samples)'.
+        We'll compile and run it, returning the average fitness (lower is better).
         """
         try:
             print("Evaluating user-supplied multi-facility code:\n", code_string)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
 
+                # Create a fresh module
                 heuristic_module = types.ModuleType("heuristic_module")
                 exec(code_string, heuristic_module.__dict__)
                 sys.modules[heuristic_module.__name__] = heuristic_module
@@ -140,5 +153,3 @@ class MLS:
         except Exception as e:
             print("Error in evaluate:", e)
             return None
-
-

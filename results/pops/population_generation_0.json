@@ -1,8 +1,1 @@
-[
-     {
-          "algorithm": "Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.",
-          "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Percentile Rule' by placing facilities at equally spaced quantiles.}\n\n    sorted_peaks = np.sort(peaks)\n    facilities_positions = []\n    \n    for i in range(k):\n        frac = (i + 1) / (k + 1)\n        idx = int(frac * (len(peaks) - 1))\n        facilities_positions.append(sorted_peaks[idx])\n    \n    return facilities_positions",
-          "objective": 2.12508,
-          "other_inf": null
-     }
-]
+[]

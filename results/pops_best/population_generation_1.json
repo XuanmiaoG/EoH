@@ -1,6 +1,0 @@
-{
-     "algorithm": "Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].",
-     "code": "import numpy as np\n\ndef place_facilities(peaks, weights, k):\n    # {Implementing a 'Best Constant' by searching over a fixed number of candidate positions distributed evenly in [0,1].}\n    \n    candidate_positions = np.linspace(0, 1, 101)\n    facilities_positions = []\n    \n    for position in candidate_positions:\n        cost = np.sum(weights * np.abs(peaks - position))\n        facilities_positions.append((position, cost))\n    \n    # Sort by cost\n    facilities_positions.sort(key=lambda x: x[1])\n    \n    # Select the top k positions with the lowest cost\n    best_positions = [fac_position[0] for fac_position in facilities_positions[:k]]\n    \n    return facilities_positions",
-     "objective": 0.07703,
-     "other_inf": null
-}
