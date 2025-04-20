@@ -1,155 +1,91 @@
-import numpy as np
 import types
 import warnings
 import sys
+import numpy as np
 
-# "get_instance.py" presumably defines:
-#     - GetData
-#     - calc_fitness( peaks, misreports, weights, place_func, k, epsilon=0.01 )
-#       which now requires a 'k' parameter.
-#     - place_facilities_quantiles (optional baseline)
-from .get_instance import (
-    GetData,
-    calc_fitness,
-    place_facilities_quantiles,  # optional
-)
-
+from .get_instance import GetData, calc_fitness
 from .prompts import GetPrompts
 
 
 class MLS:
     """
-    Multi-Facility Location Mechanism Design 'Runner'.
-
-    Loads train/test data from GetData, then provides evaluate(...) to measure how well
-    a user-defined 'get_locations(...)' function performs.  The evaluation is the average
-    'fitness', i.e., sum of (weighted) social cost + any strategyproofness penalty,
-    following the paper's approach.
-
-    Key notes:
-      - Single-peaked preferences on [0,1].
-      - We pass 'k' to calc_fitness(...) if it requires a facility count.
-      - The user code must define `get_locations(samples) -> [locations]`.
-      - By default, we assume two facilities (k=2), or you can adjust it as needed.
+    Runner for multi‑facility location mechanisms.
+    Loads data via GetData, then evaluateHeuristic returns
+    exactly the average fitness (social cost + penalty) per Equation (1).
     """
 
-    def __init__(self, k=2, epsilon=0.01):
-        """
-        Initialize the runner. We store 'k' (number of facilities) and 'epsilon'
-        (the strategyproofness threshold).
-        """
+    def __init__(self, k: int = 2, epsilon: float = 0.01):
         self.k = k
         self.epsilon = epsilon
 
-        # Load data from get_instance.py
-        getdata = GetData()
-        train_data, test_data = getdata.get_instances()
-
-        # Merge train+test
+        gd = GetData()
+        train, test = gd.get_instances()
         self.instances = {}
-        self.instances.update(train_data)
-        self.instances.update(test_data)
+        self.instances.update(train)
+        self.instances.update(test)
 
-        # Load prompt info if needed
         try:
             self.prompts = GetPrompts()
-        except Exception:
+        except ImportError:
             self.prompts = None
 
-    def evaluateHeuristic(self, alg) -> float:
+    def evaluateHeuristic(self, alg_module: types.ModuleType) -> float:
         """
-        Evaluate a user-supplied mechanism on all loaded samples.
-
-        The mechanism 'alg' must define `get_locations(samples)`.
-        We'll compute the average fitness across all data.
+        Runs `calc_fitness(...)` on every sample and returns
+        the average fitness (cost + penalty) across all samples.
         """
-        place_func = getattr(alg, "get_locations", None)
+        place_func = getattr(alg_module, "get_locations", None)
         if place_func is None:
-            raise ValueError(
-                "No 'get_locations(samples)' function found in the user code."
-            )
+            raise ValueError("Module must define get_locations(samples).")
 
-        total_fitness = 0.0
-        total_samples = 0
+        total_fit = 0.0
+        count = 0
 
         for key, val in self.instances.items():
-            if "peaks" not in val:
+            peaks = val.get("peaks")
+            if peaks is None or peaks.ndim != 2:
                 continue
 
-            peaks_arr = val["peaks"]
-            misr_arr = val.get("misreports", None)
-            weights_info = val.get("weights", None)
-
-            if len(peaks_arr.shape) != 2:
-                warnings.warn(f"'peaks' for {key} is not 2D. Skipping.")
-                continue
-
-            num_samples, n_agents = peaks_arr.shape
+            misreports = val.get("misreports", None)
+            weights = val.get("weights", None)
+            num_samples, n_agents = peaks.shape
 
             for i in range(num_samples):
-                peaks_i = peaks_arr[i]
-
-                if weights_info is not None:
-                    if len(weights_info.shape) == 1:
-                        weights_i = weights_info
-                    elif len(weights_info.shape) == 2:
-                        weights_i = weights_info[i]
-                    else:
-                        warnings.warn(
-                            f"Unexpected 'weights' shape {weights_info.shape} in {key}."
-                        )
-                        weights_i = np.ones(n_agents, dtype=float)
+                p = peaks[i]
+                # extract weights for this sample
+                if weights is None:
+                    w = np.ones(n_agents, dtype=float)
+                elif weights.ndim == 1:
+                    w = weights
                 else:
-                    weights_i = np.ones(n_agents, dtype=float)
+                    w = weights[i]
+                # extract misreports for this sample
+                m = None
+                if isinstance(misreports, np.ndarray) and misreports.ndim == 3:
+                    if misreports.shape[0] == num_samples:
+                        m = misreports[i]
 
-                misreports_i = None
-                if misr_arr is not None and len(misr_arr.shape) == 3:
-                    if (
-                        misr_arr.shape[0] == num_samples
-                        and misr_arr.shape[1] == n_agents
-                    ):
-                        misreports_i = misr_arr[i]
-                    else:
-                        warnings.warn(
-                            f"misreports shape mismatch {misr_arr.shape} for {key}, skipping misreports."
-                        )
+                # this is exactly social cost + penalty
+                fit_i = calc_fitness(p, m, w, place_func, k=self.k, epsilon=self.epsilon)
+                total_fit += fit_i
+                count += 1
 
-                # Pass k=self.k explicitly to calc_fitness so it won't complain
-                fitness_i = calc_fitness(
-                    peaks_i,
-                    misreports_i,
-                    weights_i,
-                    place_func,
-                    k=self.k,
-                    epsilon=self.epsilon,
-                )
-                total_fitness += fitness_i
-                total_samples += 1
+        if count == 0:
+            warnings.warn("No valid samples; returning large fitness.")
+            return float("inf")
 
-        if total_samples == 0:
-            warnings.warn("No valid samples found. Returning fitness=9999.")
-            return 9999.0
+        return total_fit / count
 
-        return total_fitness / total_samples
-
-    def evaluate(self, code_string: str) -> float:
+    def evaluate(self, code_string: str) -> float | None:
         """
-        Evaluate a user-supplied code snippet that defines 'get_locations(samples)'.
-        We'll compile and run it, returning the average fitness (lower is better).
+        Compile user code (must define get_locations) and return its average fitness.
         """
         try:
-            print("Evaluating user-supplied multi-facility code:\n", code_string)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-
-                # Create a fresh module
-                heuristic_module = types.ModuleType("heuristic_module")
-                exec(code_string, heuristic_module.__dict__)
-                sys.modules[heuristic_module.__name__] = heuristic_module
-
-                fitness = self.evaluateHeuristic(heuristic_module)
-                return fitness
-
+            print("Evaluating user code:\n", code_string)
+            mod = types.ModuleType("user_heuristic")
+            exec(code_string, mod.__dict__)
+            sys.modules[mod.__name__] = mod
+            return self.evaluateHeuristic(mod)
         except Exception as e:
-            print("Error in evaluate:", e)
+            print("Evaluation error:", e)
             return None
