@@ -3,7 +3,7 @@ import types
 import warnings
 import sys
 
-# 从 get_instance 模块中加载所需组件
+# Import necessary components from get_instance module
 from get_instance import (
     GetData,
     calc_fitness,
@@ -12,58 +12,79 @@ from get_instance import (
 
 class MLS_Test:
     """
-    针对多设施选址问题的评估类，仅使用 test 数据进行评估。
+    An evaluation class for multi-facility location problems using only test data.
 
-    流程：
-      1. 通过 GetData 加载数据时只使用 test 数据；
-      2. evaluateHeuristic 方法要求候选模块提供 place_facilities(peaks, weights, k) 函数，
-         依次对所有实例计算 fitness（加权社会成本 + 罚分）；
-      3. evaluate 方法接收用户提供的代码字符串，
-         将其动态加载后调用 evaluateHeuristic 得到平均 fitness（越低越好）。
+    Workflow:
+      1. Load only the test data through GetData.
+      2. The method evaluateHeuristic requires that the candidate module defines
+         place_facilities(peaks, weights, k).
+         This is called for all test instances to compute the fitness (weighted social cost + penalty).
+      3. The method evaluate takes a user-provided code string, dynamically loads it,
+         and calls evaluateHeuristic to obtain the average fitness (lower is better).
     """
 
-    def __init__(self, epsilon=0.01, k=2):
+    def __init__(self, epsilon: float = 0.01, k: int = 2) -> None:
+        """
+        Constructor for MLS_Test.
+
+        Args:
+            epsilon: The maximum regret threshold above which a penalty is added.
+            k: The number of facilities to be placed (can be overridden per instance if desired).
+        """
         self.epsilon = epsilon
         self.k = k
-        getdata = GetData()
-        # 只取 test 数据
-        _, test_data = getdata.get_instances()
+        data_handler = GetData()
+        # Retrieve only the test data
+        _, test_data = data_handler.get_instances()
         self.instances = test_data
 
-    def evaluateHeuristic(self, alg) -> float:
+    def evaluateHeuristic(self, alg: object) -> float:
         """
-        对所有 test 实例使用候选模块中提供的 place_facilities(...) 函数进行评估，
-        并返回所有样本 fitness（平均值）。
+        Evaluates the candidate mechanism by invoking the place_facilities(...) function
+        on all test data samples. Returns the average fitness (lower is better).
+
+        Args:
+            alg: A module-like object that must provide the function
+                 place_facilities(peaks, weights, k).
+
+        Returns:
+            The average fitness across all test samples.
         """
-        # 从候选模块中获取 place_facilities 函数
+        # Obtain place_facilities function from the candidate module
         place_func = getattr(alg, "place_facilities", None)
         if place_func is None:
             raise ValueError(
-                "候选模块中未定义 'place_facilities(peaks, weights, k)' 函数。"
+                "The candidate module does not define 'place_facilities(peaks, weights, k)'."
             )
 
         total_fitness = 0.0
         total_samples = 0
 
-        # 遍历所有 test 数据实例
+        # Iterate over all test data instances
         for key, val in self.instances.items():
+            # If 'peaks' is not available, skip
             if "peaks" not in val:
                 continue
-            peaks_arr = val["peaks"]  # 形状 (num_samples, n_agents)
+
+            peaks_arr = val["peaks"]  # Shape: (num_samples, n_agents)
             misr_arr = val.get("misreports", None)
             weights_info = val.get("weights", None)
-            k_local = self.k  # 可扩展为使用实例内部的 k
+            k_local = self.k
 
-            # 简单检查 peaks 数组维度
+            # Check that peaks has two dimensions
             if len(peaks_arr.shape) != 2:
-                print(f"Warning: {key} 中 'peaks' 形状非二维，跳过。")
+                print(
+                    f"Warning: in instance {key}, 'peaks' is not 2-dimensional. Skipping."
+                )
                 continue
 
             num_samples, n_agents = peaks_arr.shape
 
+            # Compute fitness for each sample in this instance
             for i in range(num_samples):
                 peaks_i = peaks_arr[i]
-                # 处理权重数据：可能是一维（全局）或二维（每个样本一行）
+
+                # Process weight data, which may be 1D or 2D
                 if weights_info is not None:
                     if len(weights_info.shape) == 1:
                         weights_i = weights_info
@@ -71,13 +92,14 @@ class MLS_Test:
                         weights_i = weights_info[i]
                     else:
                         print(
-                            f"Warning: {key} 中 weights 形状异常 {weights_info.shape}，采用均匀权重。"
+                            f"Warning: in instance {key}, 'weights' has unexpected shape {weights_info.shape}, using uniform weights."
                         )
                         weights_i = np.ones(n_agents, dtype=float)
                 else:
+                    # Default to uniform weights if none are provided
                     weights_i = np.ones(n_agents, dtype=float)
 
-                # 如果存在 misreports 且为三维，则取出当前样本的数据
+                # If misreports exist and are 3D, extract the portion for this sample
                 misreports_i = None
                 if misr_arr is not None and len(misr_arr.shape) == 3:
                     if (
@@ -87,10 +109,10 @@ class MLS_Test:
                         misreports_i = misr_arr[i]
                     else:
                         print(
-                            f"Warning: {key} 中 misreports 形状不匹配：{misr_arr.shape}"
+                            f"Warning: in instance {key}, misreports has mismatch shape {misr_arr.shape}."
                         )
 
-                # 计算当前样本的 fitness
+                # Calculate fitness for this sample
                 fitness_i = calc_fitness(
                     peaks_i,
                     misreports_i,
@@ -102,35 +124,46 @@ class MLS_Test:
                 total_fitness += fitness_i
                 total_samples += 1
 
+        # If no valid samples were found, return a large fitness value
         if total_samples == 0:
-            print("Warning: 未找到有效样本，返回 9999。")
+            print("Warning: no valid samples found, returning 9999.0.")
             return 9999.0
 
         return total_fitness / total_samples
 
-    def evaluate(self, code_string):
+    def evaluate(self, code_string: str) -> float or None:
         """
-        对用户提供的代码字符串进行评估。
-        代码中必须定义如下函数：
+        Evaluates user-provided code that must define the following function:
 
             def place_facilities(peaks, weights, k):
                 ...
                 return np.array([...])
 
-        该方法将动态加载此代码并调用 evaluateHeuristic 得到平均 fitness。
+        The code is dynamically loaded, then evaluateHeuristic is called to compute
+        the average fitness on the test data.
+
+        Args:
+            code_string: String containing user-provided Python code.
+
+        Returns:
+            The average fitness (float) if evaluation is successful, otherwise None in case of error.
         """
         try:
-            print("正在评估用户提供的多设施选址代码:\n", code_string)
+            print(
+                "Evaluating user-provided multi-facility location code:\n", code_string
+            )
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
 
+                # Dynamically create a module for the user's code
                 heuristic_module = types.ModuleType("heuristic_module")
                 exec(code_string, heuristic_module.__dict__)
                 sys.modules[heuristic_module.__name__] = heuristic_module
 
+                # Invoke evaluateHeuristic on the loaded module
                 fitness = self.evaluateHeuristic(heuristic_module)
                 return fitness
 
         except Exception as e:
-            print("evaluate 出现错误:", e)
+            print("An error occurred during evaluation:", e)
             return None
