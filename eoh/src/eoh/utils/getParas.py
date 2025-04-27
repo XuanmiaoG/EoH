@@ -125,7 +125,7 @@ class Paras:
             elif self.method == "sa":
                 self.ec_operators = ["m1"]
             elif self.method == "mls":
-                self.ec_operators = ["e1", "m1"]
+                self.ec_operators = ["m1", "m2"]
 
         # Set operator weights
         if self.ec_operator_weights is None:
