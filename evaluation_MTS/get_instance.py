@@ -1,273 +1,292 @@
+from __future__ import annotations
 import os
 import pickle
-import numpy as np
 import warnings
+from typing import Dict, Tuple, Any, Optional
+
+import numpy as np
 
 # --- Configuration ---
-# Assumes data is in a 'data' subdirectory relative to this file's location
-# Adjust if your data is elsewhere
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(CURRENT_DIR, "data")
-TRAIN_DATA_FILE = os.path.join(DATA_DIR, "all_data_train.pkl")
-TEST_DATA_FILE = os.path.join(DATA_DIR, "all_data_test.pkl")
+# Assumes data is in a 'data' subdirectory relative to this file's location.
+# Adjust if your data is elsewhere.
+CURRENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR: str = os.path.join(CURRENT_DIR, "data")
+TRAIN_DATA_FILE: str = os.path.join(DATA_DIR, "all_data_train.pkl")
+TEST_DATA_FILE: str = os.path.join(DATA_DIR, "all_data_test.pkl")
 
+# Keys expected to be found in the data dictionaries
 PEAK_DATA_KEY: str = "peaks"  # Expected key for peak data in the pkl dict
 WEIGHTS_DATA_KEY: str = "weights"  # Expected key for weights data (optional)
 MISREPORT_DATA_KEY: str = "misreports"  # Expected key for misreport data
 
 # !!! Crucial: Set this based on your misreport data generation !!!
 # How many misreport scenarios exist for each original sample?
-# If original shape was (1000, 5) and flattened is (10000, 5), this should be 10.
+# If your shape was (1000, 5) and flattened is (10000, 5), this should be 10.
 NUM_MISREPORTS_PER_AGENT_OR_SCENARIO: int = 10
-
-
-# --- Helper Functions ---
 
 
 def calc_weighted_social_cost(
     agent_peaks: np.ndarray, facility_locations: np.ndarray, weights: np.ndarray
 ) -> float:
     """
-    Calculates the weighted social cost for one instance.
-    Assumes weights are normalized or represent the desired relative importance.
+    Calculates the (weighted) social cost for a single instance.
+
+    Args:
+      agent_peaks: A NumPy array of shape (n,) representing the agents' peaks.
+      facility_locations: A NumPy array/list of shape (k,) representing facility locations.
+      weights: A NumPy array of shape (n,) representing the weights/importance of each agent.
+
+    Returns:
+      The weighted social cost (float). Returns float('inf') if facility_locations or agent_peaks is invalid.
     """
     if (
         not isinstance(facility_locations, (list, np.ndarray))
         or len(facility_locations) == 0
     ):
-        return float("inf")  # Invalid locations
+        return float("inf")
     if not isinstance(agent_peaks, (list, np.ndarray)) or len(agent_peaks) == 0:
-        return float("inf")  # Invalid peaks
+        return float("inf")
 
     agent_peaks_arr = np.array(agent_peaks, dtype=float)
     facility_locations_arr = np.array(facility_locations, dtype=float)
     weights_arr = np.array(weights, dtype=float)
 
-    # Ensure weights sum to 1 for averaging, or adjust calculation if they represent absolute importance
-    normalized_weights = weights_arr / np.sum(weights_arr)
+    # Normalize weights so they sum to 1 if we intend to average
+    total_w = np.sum(weights_arr)
+    if total_w <= 0:
+        # If sum of weights is zero or negative, treat cost as invalid
+        return float("inf")
+    normalized_weights = weights_arr / total_w
 
-    # Calculate distance from each agent to their nearest facility
-    # Expand dims for broadcasting: agent_peaks (n, 1), facility_locations (k,) -> distances (n, k)
+    # Compute distance from each agent to its nearest facility
+    # agent_peaks_arr: shape (n,)
+    # facility_locations_arr: shape (k,)
+    # distances: shape (n, k)
     distances = np.abs(agent_peaks_arr[:, np.newaxis] - facility_locations_arr)
-    min_distances = np.min(distances, axis=1)  # Shape (n,)
+    min_distances = np.min(distances, axis=1)
 
-    # Calculate weighted average cost
+    # Weighted average cost
     weighted_cost = np.sum(min_distances * normalized_weights)
     return float(weighted_cost)
 
 
 def calc_max_regret(
     peaks: np.ndarray,
-    misreports: np.ndarray | None,
+    misreports: Optional[np.ndarray],
     weights: np.ndarray,
-    place_func,
+    place_func: callable,
     k: int,
 ) -> float:
     """
     Calculates the maximum regret for a single instance.
 
     Args:
-      peaks: True peaks for the instance, shape (n,).
-      misreports: Misreports for this instance, expected shape (n, M).
-          If None, we return 0.0.
-      weights: Agent weights, shape (n,).
-      place_func: A callable place_func(peaks, weights, k) -> np.ndarray
+      peaks: True peaks for this instance, shape (n,).
+      misreports: Misreports for this instance (if any), shape (n, M) expected.
+                  If None, we treat the max regret as 0.
+      weights: Weights for each agent, shape (n,).
+      place_func: A callable that places k facilities given (peaks, weights, k).
       k: Number of facilities.
 
     Returns:
-      The maximum regret for this instance (float).
+      The maximum regret (float). If shape checks fail, returns 0.0 or warns.
     """
     n: int = len(peaks)
     if misreports is None:
         return 0.0
 
-    # Ensure expected shape (n, M)
-    if not (len(misreports.shape) == 2 and misreports.shape[0] == n):
+    # We expect misreports to be shape (n, M)
+    if len(misreports.shape) != 2 or misreports.shape[0] != n:
         warnings.warn(
-            f"Unexpected misreports shape {misreports.shape} in calc_max_regret. Expected ({n}, M). Skipping regret.",
+            f"Unexpected misreports shape: {misreports.shape} (expected ({n}, M)). "
+            "Skipping regret computation by returning 0.0.",
             stacklevel=2,
         )
         return 0.0
 
-    # Ensure float types
-    peaks_arr = peaks.astype(float, copy=False)
-    weights_arr = weights.astype(float, copy=False)
-    misreports_arr = misreports.astype(float, copy=False)
-
-    # Place facilities for original peaks
-    fac_original = place_func(peaks_arr, weights_arr, k)
+    # Place facilities using the original peaks
+    fac_original = place_func(peaks, weights, k)
     if not isinstance(fac_original, (list, np.ndarray)) or len(fac_original) == 0:
         warnings.warn(
-            "Original placement function returned invalid facilities. Regret=0.",
-            stacklevel=2,
+            "Invalid facility placement for original peaks. Regret=0.", stacklevel=2
         )
         return 0.0
     fac_original_arr = np.array(fac_original, dtype=float)
 
-    # Cost for each agent (with original placements, based on true peaks)
-    original_costs_per_agent = np.min(
-        np.abs(peaks_arr[:, np.newaxis] - fac_original_arr), axis=1
-    )
+    # Original cost for each agent
+    dist_original = np.abs(peaks[:, np.newaxis] - fac_original_arr)  # shape (n, k)
+    original_costs_per_agent = np.min(dist_original, axis=1)
 
     max_r: float = 0.0
-
-    # Iterate through each agent misreporting
+    # Check each agent's misreports
     for i in range(n):
         cost_i_orig = original_costs_per_agent[i]
-        agent_true_peak = peaks_arr[i]
+        true_peak_i = peaks[i]
 
-        # Iterate through each misreport for agent i
-        for rep_idx in range(misreports_arr.shape[1]):  # shape (n, M)
-            new_peaks = np.copy(peaks_arr)
-            new_peaks[i] = misreports_arr[i, rep_idx]  # Agent i misreports
+        # Loop over each possible misreport for agent i
+        for rep_idx in range(misreports.shape[1]):
+            new_peaks = np.copy(peaks)
+            new_peaks[i] = misreports[i, rep_idx]  # single agent misreport
 
-            # Get new facility locations based on the misreport
-            fac_new = place_func(new_peaks, weights_arr, k)
+            # New facility placement
+            fac_new = place_func(new_peaks, weights, k)
             if not isinstance(fac_new, (list, np.ndarray)) or len(fac_new) == 0:
-                # Mechanism failed with this misreport, assume no gain
+                # If the mechanism fails, assume no gain
                 continue
+
             fac_new_arr = np.array(fac_new, dtype=float)
-
-            # Calculate agent i's cost with the *new* facilities but using their *true* peak
-            cost_i_new = np.min(np.abs(agent_true_peak - fac_new_arr))
-
-            # Regret = gain = original_cost - new_cost
-            regret = cost_i_orig - cost_i_new
-            if regret > max_r:
-                max_r = regret
+            # Agent i's new cost using its true peak
+            cost_i_new = np.min(np.abs(true_peak_i - fac_new_arr))
+            # Regret = original cost - new cost
+            regret_i = cost_i_orig - cost_i_new
+            if regret_i > max_r:
+                max_r = regret_i
 
     return float(max_r)
 
 
 def calc_fitness(
     peaks: np.ndarray,
-    misreports: np.ndarray | None,
+    misreports: Optional[np.ndarray],
     weights: np.ndarray,
-    place_func,
+    place_func: callable,
     k: int,
     epsilon: float = 0.01,
 ) -> float:
     """
-    Computes the fitness = (weighted social cost) + penalty, where
-      penalty = 1 if max_regret > epsilon, else 0.
+    Computes the fitness of a mechanism on a single instance, defined as:
+      fitness = weighted social cost + penalty,
+      where penalty = 1 if max_regret > epsilon, else 0.
+
+    Args:
+      peaks: True peaks for this instance, shape (n,).
+      misreports: Misreports for this instance, shape (n, M). Can be None.
+      weights: Weights of each agent, shape (n,).
+      place_func: A callable that outputs facility locations given (peaks, weights, k).
+      k: Number of facilities to place.
+      epsilon: A small threshold for deciding if the mechanism triggers penalty.
+
+    Returns:
+      The fitness value (float). High values are "worse".
+      If facility placement fails, returns 9999.0 as an indicator.
     """
-    # Ensure float types
-    peaks_arr = peaks.astype(float, copy=False)
-    weights_arr = weights.astype(float, copy=False)
-
-    # Place facilities using the provided function
-    facilities = place_func(peaks_arr, weights_arr, k)
-    if not isinstance(facilities, (list, np.ndarray)) or len(facilities) == 0:
+    fac_locs = place_func(peaks, weights, k)
+    if not isinstance(fac_locs, (list, np.ndarray)) or len(fac_locs) == 0:
         warnings.warn(
-            "Placement function returned invalid facilities. Returning high fitness.",
-            stacklevel=2,
+            "Mechanism returned invalid facility locations. Fitness=9999.", stacklevel=2
         )
         return 9999.0
-    facilities_arr = np.array(facilities, dtype=float)
 
-    # Calculate Weighted social cost
-    cost = calc_weighted_social_cost(peaks_arr, facilities_arr, weights_arr)
-
-    # Calculate Max regret
-    max_r = calc_max_regret(peaks_arr, misreports, weights_arr, place_func, k)
-    penalty = 1.0 if max_r > epsilon else 0.0
-
-    # Check for NaN or Inf in cost
+    fac_locs_arr = np.array(fac_locs, dtype=float)
+    cost = calc_weighted_social_cost(peaks, fac_locs_arr, weights)
     if np.isnan(cost) or np.isinf(cost):
-        warnings.warn(
-            f"NaN or Inf cost detected for peaks: {peaks_arr}, facilities: {facilities_arr}. Returning high fitness.",
-            stacklevel=2,
-        )
+        warnings.warn("Cost is NaN or Inf. Fitness=9999.", stacklevel=2)
         return 9999.0
 
+    max_r = calc_max_regret(peaks, misreports, weights, place_func, k)
+    penalty = 1.0 if max_r > epsilon else 0.0
     return float(cost + penalty)
-
-
-# --- Baseline Mechanism Implementations ---
 
 
 def place_facilities_quantiles(
     agent_peaks: np.ndarray, weights: np.ndarray, k: int
 ) -> np.ndarray:
-    """Baseline: Place k facilities at evenly spaced quantiles (ignoring weights)."""
+    """
+    Example baseline: place k facilities at k evenly spaced quantiles of the agent_peaks.
+    Ignores weights.
+    """
     n_agents: int = len(agent_peaks)
-    if n_agents == 0:
+    if n_agents == 0 or k <= 0:
         return np.array([], dtype=float)
-    sorted_peaks = np.sort(agent_peaks.astype(float))
+    if k >= n_agents:
+        unique_peaks = np.unique(agent_peaks)
+        return unique_peaks[:k]
 
-    if k == 0:
-        return np.array([], dtype=float)
-    if k >= n_agents:  # Place facility at each unique peak up to k
-        unique_sorted = np.unique(sorted_peaks)
-        return unique_sorted[:k]
-
-    # Calculate positions based on quantiles
-    indices = np.linspace(0, 1, k + 2)[1:-1]  # e.g. [1/(k+1), ..., k/(k+1)]
-    # If np.quantile in your version doesn't have the 'method' argument, just remove it.
+    sorted_peaks = np.sort(agent_peaks)
+    indices = np.linspace(0, 1, k + 2)[1:-1]
+    # If your NumPy is older and lacks 'method="linear"', remove the argument
     locations = np.quantile(sorted_peaks, indices, method="linear")
-    return np.array(locations, dtype=float)
+    return locations.astype(float)
 
 
 def dictatorial_rule(
     agent_peaks: np.ndarray, weights: np.ndarray, k: int, dictator_index: int
 ) -> np.ndarray:
-    """Baseline: Places all K facilities at the dictator's peak."""
+    """
+    Example baseline: place all k facilities at the location of the chosen 'dictator' agent.
+    """
     n_agents: int = len(agent_peaks)
-    if n_agents == 0:
-        return np.array([0.5] * k, dtype=float)  # Default if no agents
+    if n_agents == 0 or k <= 0:
+        return np.array([], dtype=float)
     if dictator_index < 0 or dictator_index >= n_agents:
-        warnings.warn(
-            f"Invalid dictator index {dictator_index}. Using median.", stacklevel=2
-        )
-        return np.array([np.median(agent_peaks)] * k, dtype=float)
+        warnings.warn("Invalid dictator index. Using median instead.", stacklevel=2)
+        median_loc = float(np.median(agent_peaks))
+        return np.array([median_loc] * k, dtype=float)
     return np.array([agent_peaks[dictator_index]] * k, dtype=float)
 
 
 def best_dictatorial_rule(
     agent_peaks: np.ndarray, weights: np.ndarray, k: int
 ) -> np.ndarray:
-    """Baseline: Finds the best dictator for a specific instance."""
+    """
+    Example baseline: choose the best dictator among all agents
+    to minimize the social cost for this single instance.
+    """
     n_agents: int = len(agent_peaks)
-    if n_agents == 0:
-        return np.array([0.5] * k, dtype=float)  # Default if no agents
+    if n_agents == 0 or k <= 0:
+        return np.array([], dtype=float)
 
     best_cost: float = float("inf")
-    best_locations: np.ndarray | list[float] = []
-    # We'll do cost comparisons with normalized weights
-    normalized_weights = weights / np.sum(weights)
+    best_locs: Any = None
+    total_w = np.sum(weights)
+    if total_w <= 0:
+        warnings.warn("Sum of weights <= 0. Returning empty facilities.")
+        return np.array([], dtype=float)
+
+    # For consistent comparison, normalize weights for cost calculation
+    normalized_weights = weights / total_w
 
     for i in range(n_agents):
-        locations = dictatorial_rule(agent_peaks, weights, k, i)
-        cost = calc_weighted_social_cost(agent_peaks, locations, normalized_weights)
-        if cost < best_cost:
-            best_cost = cost
-            best_locations = locations
+        candidate_locs = dictatorial_rule(agent_peaks, weights, k, i)
+        c = calc_weighted_social_cost(agent_peaks, candidate_locs, normalized_weights)
+        if c < best_cost:
+            best_cost = c
+            best_locs = candidate_locs
 
-    if not isinstance(best_locations, (list, np.ndarray)) or len(best_locations) == 0:
-        median_loc = float(np.median(agent_peaks))
-        best_locations = np.array([median_loc] * k, dtype=float)
-
-    return np.array(best_locations, dtype=float)
+    if not isinstance(best_locs, (list, np.ndarray)) or len(best_locs) == 0:
+        # fallback to median-based if something went wrong
+        med = float(np.median(agent_peaks))
+        return np.array([med] * k, dtype=float)
+    return best_locs.astype(float)
 
 
 def constant_rule(agent_peaks: np.ndarray, weights: np.ndarray, k: int) -> np.ndarray:
-    """Baseline: Uses fixed, evenly spaced locations."""
-    if k == 0:
+    """
+    Example baseline: place k facilities at fixed, evenly spaced locations in [0,1].
+    """
+    if k <= 0:
         return np.array([], dtype=float)
-    # Simple fixed locations: 1/(K+1), 2/(K+1), ..., K/(K+1)
-    locations = [(i + 1.0) / (k + 1.0) for i in range(k)]
-    return np.array(locations, dtype=float)
-
-
-# --- Data Loading Class ---
+    positions = [(i + 1.0) / (k + 1.0) for i in range(k)]
+    return np.array(positions, dtype=float)
 
 
 class GetData:
     """
     Loads train/test data from .pkl files specified by paths.
-    Handles nested dictionary structure: { (dist, n_agents) : {'peaks': ndarray, 'misreports': ndarray, ...}, ...}
-    Attempts to reshape misreports if they appear flattened.
-    Provides baseline evaluation methods.
+    Handles a nested dictionary structure: { (dist, n_agents): {...}, ... }
+    Each dictionary sub-entry is expected to contain:
+      - 'peaks': np.ndarray of shape (num_samples, n_agents)
+      - 'misreports': (optional) np.ndarray of shape (num_samples, n_agents, M)
+      - 'weights': (not read from .pkl here, but assigned based on n_agents)
+      - any other fields as desired.
+
+    Example of the final structure after loading:
+      self.train_data[(dist, n)] = {
+        'peaks': np.ndarray of shape (num_samples, n_agents),
+        'weights': np.ndarray of shape (n_agents,),
+        'misreports': np.ndarray of shape (num_samples, n_agents, M) or None,
+        ...
+      }
     """
 
     def __init__(
@@ -275,16 +294,27 @@ class GetData:
         data_train_path: str = TRAIN_DATA_FILE,
         data_test_path: str = TEST_DATA_FILE,
         num_misreports_per_item: int = NUM_MISREPORTS_PER_AGENT_OR_SCENARIO,
-    ):
-        self.train_path = data_train_path
-        self.test_path = data_test_path
-        self.num_misreports = num_misreports_per_item
-        self.train_data: dict = {}
-        self.test_data: dict = {}
+    ) -> None:
+        """
+        Args:
+          data_train_path: File path for the training set .pkl
+          data_test_path: File path for the testing set .pkl
+          num_misreports_per_item: The number of misreports per sample you expect.
+        """
+        self.train_path: str = data_train_path
+        self.test_path: str = data_test_path
+        self.num_misreports: int = num_misreports_per_item
+
+        self.train_data: Dict[Any, Dict[str, np.ndarray]] = {}
+        self.test_data: Dict[Any, Dict[str, np.ndarray]] = {}
+
         self.load_data()
 
     def load_data(self) -> None:
-        """Loads and preprocesses data from the specified pickle files."""
+        """
+        Loads and preprocesses the data from the specified pickle files,
+        storing them in self.train_data and self.test_data.
+        """
         if not os.path.exists(self.train_path):
             raise FileNotFoundError(f"Train data not found: {self.train_path}")
         if not os.path.exists(self.test_path):
@@ -300,44 +330,53 @@ class GetData:
             self.test_data = pickle.load(f)
         print("Test data loaded.")
 
-        # Preprocess
         print("Preprocessing training data...")
         self._preprocess_dataset(self.train_data)
         print("Preprocessing test data...")
         self._preprocess_dataset(self.test_data)
         print("Data preprocessing complete.")
 
-    def _preprocess_dataset(self, dataset: dict) -> None:
+    def _preprocess_dataset(self, dataset: Dict[Any, Dict[str, Any]]) -> None:
         """
-        Convert types and attempt to reshape misreports for a dataset dict.
-        We no longer read weights from the pickle; 而是根据 n_agents 直接设置。
+        Internal method to preprocess the dataset dictionary:
+          - Convert 'peaks' to float np.ndarray of shape (num_samples, n_agents).
+          - Assign 'weights' based on n_agents, e.g. 1st agent weight=5 for n=5.
+          - Reshape 'misreports' from flatten if needed.
+          - Remove invalid entries.
         """
         keys_to_remove = []
         for key, val in dataset.items():
             if not isinstance(val, dict):
-                warnings.warn(f"Value for key {key} is not a dict, skipping.")
+                warnings.warn(
+                    f"Value for key {key} is not a dict; removing from dataset.",
+                    stacklevel=2,
+                )
                 keys_to_remove.append(key)
                 continue
 
             valid_instance = True
 
-            # 1. Convert peaks
+            # 1) Convert peaks
             if PEAK_DATA_KEY in val and val[PEAK_DATA_KEY] is not None:
                 try:
                     peaks_array = np.array(val[PEAK_DATA_KEY], dtype=float)
                     if peaks_array.ndim != 2:
-                        warnings.warn(f"Peaks for {key} are not 2D. Skipping key.")
+                        warnings.warn(
+                            f"Peaks for {key} are not 2D (found shape {peaks_array.shape}). Removing key.",
+                            stacklevel=2,
+                        )
                         valid_instance = False
                     else:
                         val[PEAK_DATA_KEY] = peaks_array
                 except Exception as e:
                     warnings.warn(
-                        f"Could not convert peaks for {key} to float array: {e}. Skipping key."
+                        f"Failed to convert peaks for {key} to float array: {e}",
+                        stacklevel=2,
                     )
                     valid_instance = False
             else:
                 warnings.warn(
-                    f"'{PEAK_DATA_KEY}' not found or is None for key {key}. Skipping key."
+                    f"No valid '{PEAK_DATA_KEY}' in {key}; removing key.", stacklevel=2
                 )
                 valid_instance = False
 
@@ -347,62 +386,88 @@ class GetData:
 
             num_samples, n_agents = val[PEAK_DATA_KEY].shape
 
-            # 2. 根据 n_agents 设置 agent weights
+            # 2) Assign weights based on n_agents
             if n_agents == 5:
-                # n=5 时，第一个 agent 权重 5，其余 1
+                # E.g., 1st agent weight=5, rest=1
                 val[WEIGHTS_DATA_KEY] = np.array(
                     [5] + [1] * (n_agents - 1), dtype=float
                 )
             elif n_agents == 10:
-                # n=10 时，前两个 agent 权重 5，其余 1
+                # E.g., first 2 agents weight=5, rest=1
                 val[WEIGHTS_DATA_KEY] = np.array(
                     [5, 5] + [1] * (n_agents - 2), dtype=float
                 )
             else:
-                # 其他情况都用均匀权重 1
+                # Default: all weights=1
                 val[WEIGHTS_DATA_KEY] = np.ones(n_agents, dtype=float)
 
-            # 3. Convert and reshape misreports
-            if MISREPORT_DATA_KEY in val and val[MISREPORT_DATA_KEY] is not None:
+            # 3) Convert and reshape misreports
+            misr_raw = val.get(MISREPORT_DATA_KEY, None)
+            if misr_raw is not None:
                 try:
-                    misreports_raw = np.array(val[MISREPORT_DATA_KEY], dtype=float)
+                    misr_arr = np.array(misr_raw, dtype=float)
                     expected_flat = num_samples * self.num_misreports
                     target_shape = (num_samples, n_agents, self.num_misreports)
 
-                    if misreports_raw.shape == target_shape:
-                        val[MISREPORT_DATA_KEY] = misreports_raw
-                    elif misreports_raw.shape == (expected_flat, n_agents):
-                        # Reshape from (num_samples * M, n_agents) -> (num_samples, n_agents, M)
-                        intermediate = misreports_raw.reshape(
+                    if misr_arr.shape == target_shape:
+                        val[MISREPORT_DATA_KEY] = misr_arr
+                    elif misr_arr.shape == (expected_flat, n_agents):
+                        # Reshape from (num_samples*M, n_agents) -> (num_samples, n_agents, M)
+                        intermediate = misr_arr.reshape(
                             (num_samples, self.num_misreports, n_agents)
                         )
                         val[MISREPORT_DATA_KEY] = intermediate.transpose(0, 2, 1)
                     else:
                         warnings.warn(
-                            f"Misreports for {key} have unexpected shape {misreports_raw.shape}. Setting to None."
+                            f"Misreports for {key} have shape {misr_arr.shape}, "
+                            f"expected {target_shape} or ({expected_flat}, {n_agents}). Setting to None.",
+                            stacklevel=2,
                         )
                         val[MISREPORT_DATA_KEY] = None
-
                 except Exception as e:
                     warnings.warn(
-                        f"Could not process misreports for {key}: {e}. Setting to None."
+                        f"Failed to process misreports for {key}: {e}. Setting to None.",
+                        stacklevel=2,
                     )
                     val[MISREPORT_DATA_KEY] = None
             else:
                 val[MISREPORT_DATA_KEY] = None
 
-        # 4. 删除所有无效的实例
+        # 4) Remove invalid items
         for bad_key in keys_to_remove:
             del dataset[bad_key]
 
-    def get_instances(self) -> tuple[dict, dict]:
+    def get_instances(
+        self,
+    ) -> Tuple[Dict[Any, Dict[str, np.ndarray]], Dict[Any, Dict[str, np.ndarray]]]:
         """
-        Return (train_data, test_data).
-        Each is a dict mapping (dist, n_agents) -> {
-            'peaks': np.ndarray,
-            'weights': np.ndarray,
-            'misreports': np.ndarray | None,
-            ...
-        }.
+        Returns the processed (train_data, test_data).
+
+        Additionally, here we confirm that each valid misreports array in both
+        train_data and test_data has the last dimension matching self.num_misreports.
         """
+        # --- Confirm misreport shapes for the training set ---
+        for key, val in self.train_data.items():
+            misreports = val.get(MISREPORT_DATA_KEY, None)
+            if misreports is not None:
+                # Expect shape = (num_samples, n_agents, self.num_misreports)
+                if misreports.ndim == 3 and misreports.shape[2] != self.num_misreports:
+                    warnings.warn(
+                        f"[Train] Key={key}: Found misreports.shape={misreports.shape} "
+                        f"but expected 3rd dim={self.num_misreports}.",
+                        stacklevel=2,
+                    )
+
+        # --- Confirm misreport shapes for the testing set ---
+        for key, val in self.test_data.items():
+            misreports = val.get(MISREPORT_DATA_KEY, None)
+            if misreports is not None:
+                # Expect shape = (num_samples, n_agents, self.num_misreports)
+                if misreports.ndim == 3 and misreports.shape[2] != self.num_misreports:
+                    warnings.warn(
+                        f"[Test] Key={key}: Found misreports.shape={misreports.shape} "
+                        f"but expected 3rd dim={self.num_misreports}.",
+                        stacklevel=2,
+                    )
+
         return self.train_data, self.test_data
